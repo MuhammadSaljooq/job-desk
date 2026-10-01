@@ -424,6 +424,51 @@ Done:
     with the amount in view
 - Checks: lint ✓, typecheck ✓, tests ✓, E2E ✓, build ✓.
 
+## Phase 9: dashboard (2026-10-02)
+
+- New dependency: `recharts` (in the stack).
+- `src/features/dashboard/queries.ts`:
+  - `dashboardJobs` loads every job once per request (React `cache`), shaped with the
+    business-local day, overdue (D10), the chip label and a link to the customer at that job
+  - `jobsView`: ongoing strip (not completed, nearest date first), jobs today, active /
+    scheduled counts, calendar chips for the month and jobs by day
+  - `pipelineView`: five stage columns (the 6 most recently completed)
+  - `openQuotes` = Sent quotes waiting on a reply (agreed: $480.60 across 1 quote on the seed)
+  - `moneyByMonth`: one SQL `GROUP BY month, type` for the last 6 months
+  - `ensureJobReminders` (D4): unread "Job tomorrow" activity for tomorrow's Scheduled / In
+    progress jobs, created when the dashboard loads. One per job per day, with a Postgres
+    advisory lock so two tabs can't double up. It's skipped when `notifyJobReminders` is off.
+- `/`, matching shot-dashboard.png. The breadcrumb has a job filter pill (All jobs / Pending
+  / In progress, `?jobs=`) and the month picker; both drive rows 1 and 2.
+  - Row 1:
+    - owner card: quick buttons New quote / New customer / New job / Log expense, today's
+      date, and "N jobs today", which opens today's day sheet
+    - "Ongoing jobs ▾" jump menu and the pastel JobCard strip
+  - Row 2:
+    - "This month": revenue, expenses, net + margin pill, open quotes, active jobs. Each row
+      links to /books or /quotes, already filtered.
+    - calendar with stage chips; tapping a day opens a sheet with its jobs (`?day=`)
+    - activity inbox: the latest 6, the newest unread as the ink row, View all
+  - Row 3: the pipeline board (a stage dropdown on each card) at full width, then the money
+    in / out chart (Recharts, token colours, with an sr-only table of the same numbers) and
+    the latest 6 photos.
+  - Every card streams in its own Suspense boundary with a skeleton. With no jobs, the strip
+    shows "No jobs yet" with Add a customer / Import items.
+- `/calendar` (D11): a large month grid of all jobs with the same day sheet.
+- Bug fixed from phase 8: the header's + New > "Log expense" / "Record payment" linked to
+  `/books?new=expense|income`, but the page ignored it. The books buttons now open from
+  `?new=` and clear it on close. A failing E2E test was written first.
+- Leaving out the screenshot's 🔍 / filter / ♥ buttons above the strip (no behaviour in the
+  spec). As on /books, this month shows the corrected $650.74 / $287.30 / 31%.
+- Tests:
+  - 153 Vitest: seed jobs today / active / overdue first / calendar chips, the Pending and In
+    progress filters, the pipeline counts, open quotes, 6-month sums, reminders (once even
+    when loaded twice at once, skips completed jobs, respects the setting), cross-business
+    isolation, the compact chart axis labels
+  - 35 Playwright: all cards plus today's day sheet; the filter; summary links; stage change
+    on the board; /calendar day sheet; the phone fit; the + New books links
+- Checks: lint ✓, typecheck ✓, tests ✓, E2E ✓, build ✓.
+
 ## External setup still needed (by you)
 
 - Google Cloud OAuth client: Drive API, scope `drive.file`, redirect
@@ -433,4 +478,4 @@ Done:
 
 ## Next
 
-Phase 9: dashboard (`docs/prompts/09-dashboard.md`).
+Phase 10: settings and team (`docs/prompts/10-settings-team.md`).

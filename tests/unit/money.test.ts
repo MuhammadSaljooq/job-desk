@@ -9,6 +9,7 @@ import {
   sum,
   toCents,
 } from "@/lib/money"
+import { axisMoney } from "@/features/dashboard/components/money-chart"
 
 describe("toCents", () => {
   it("parses typed amounts without float error", () => {
@@ -86,5 +87,15 @@ describe("tax and margin", () => {
     // revenue 938.04, net 276.54 -> 29%
     expect(marginPercent(27654, 93804)).toBe(29)
     expect(marginPercent(100, 0)).toBeNull()
+  })
+})
+
+describe("axisMoney (dashboard chart)", () => {
+  it("labels cents compactly without duplicate ticks", () => {
+    expect(axisMoney(0)).toBe("$0")
+    expect(axisMoney(60000)).toBe("$600")
+    expect(axisMoney(100000)).toBe("$1k")
+    expect(axisMoney(150000)).toBe("$1.5k")
+    expect(axisMoney(200000)).toBe("$2k")
   })
 })

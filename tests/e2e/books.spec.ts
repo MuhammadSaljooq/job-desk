@@ -110,3 +110,14 @@ test("bookkeeping stacks entries on a phone with the amount in view @mobile", as
   await entry.click()
   await expect(page.getByRole("dialog", { name: "Edit entry" })).toBeVisible()
 })
+
+test("the + New menu opens the books forms (?new=expense / ?new=income)", async ({ page }) => {
+  await signIn(page, undefined, "/books")
+  await page.getByRole("button", { name: "New", exact: true }).click()
+  await page.getByRole("menuitem", { name: "Log expense" }).click()
+  await expect(page.getByRole("dialog", { name: "Log expense" })).toBeVisible()
+  await page.getByRole("button", { name: "Cancel" }).click()
+  await expect(page).not.toHaveURL(/new=/)
+  await page.goto("/books?new=income")
+  await expect(page.getByRole("dialog", { name: "Record revenue" })).toBeVisible()
+})
