@@ -239,8 +239,10 @@
     @apply text-[11px] font-medium text-text-muted;
   }
   /* Horizontal strips (job cards) scroll sideways without a visible bar. */
+  /* relative: absolutely positioned children (sr-only labels) must not escape the scroller
+     and widen the page on phones */
   .scroll-strip {
-    @apply flex snap-x snap-mandatory gap-[18px] overflow-x-auto;
+    @apply relative flex snap-x snap-mandatory gap-[18px] overflow-x-auto;
     scrollbar-width: none;
   }
   .scroll-strip::-webkit-scrollbar {

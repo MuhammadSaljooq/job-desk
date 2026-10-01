@@ -278,6 +278,48 @@ Done:
   (phase 10 adds the Storage card; `/api/storage/connect/google` already works).
 - Checks: lint ✓, typecheck ✓, tests ✓, E2E ✓, build ✓.
 
+## Phase 6: item catalog and Excel import (2026-10-01)
+
+- SheetJS 0.20.3 from the official CDN tarball (the npm `xlsx` package is stale). It's
+  loaded only when a file is read.
+- `src/features/catalog/import-excel.ts` (pure, unit tested):
+  - The header row is optional and detected by column names in any order (Category / Item /
+    Name / Service / Unit / UOM…).
+  - Without a header: 3+ columns = Category, Item, Unit; 2 columns = Item + Unit if the second
+    column looks like units, else Category + Item; 1 column = Uncategorized.
+  - Blank rows are skipped and extra columns (Price, Notes) ignored. Unit synonyms are mapped
+    (ea, hrs, SF, sq. ft., LF, gal…); the default unit is "each".
+  - Each row comes back as new / duplicate (case-insensitive, against the catalog _and_
+    earlier in the file) / invalid (no name, unknown unit, too long), with a reason.
+  - Excel paste (tabs) and CSV (quotes, "" escapes) both work. Limit: 2000 rows.
+- Actions:
+  - create / edit / delete items; a category can be picked or typed (case-insensitive, created
+    at the end of the list)
+  - create / rename / delete categories (only empty ones can be deleted)
+  - `importCatalogAction` re-validates every row on the server and skips duplicates again
+  - Staff can manage the catalog. Deleting an item leaves past quote lines intact.
+- Queries: "times quoted" (distinct quotes) and "last price" (newest priced quote) are
+  computed from QuoteLine in SQL. **The catalog stores no prices.**
+- `/catalog`, matching shot-catalog.png:
+  - import card: sample columns, Upload .xlsx / .csv, paste box, preview table with status
+    pills and reasons, "Import N items"
+  - toast like the screenshot: "Imported 38 items, skipped 2 duplicates"
+  - categories card: counts, ?category= filter, rename / delete menu, New category
+  - items table: search (?q=), category pill, unit, times quoted, last price / "Not yet",
+    edit, delete with confirmation
+  - item dialog with a "no prices here" note; empty catalog state
+- Bug fixed everywhere: the sr-only "Actions" header escaped the table's scroll container and
+  made phone pages 600px wide. All scrollers (and `.scroll-strip`) are now `relative`. A new
+  E2E **phone sweep** visits every page and the customer tabs at 412px.
+- Tests:
+  - 120 Vitest: the parser (header, no header, one column, two-column guessing, blank rows,
+    extra columns, duplicates, invalid, units, paste / CSV, a real .xlsx), actions, roles,
+    cross-business isolation, server-side import validation, times quoted / last price
+  - 20 Playwright: an .xlsx fixture (38 new + 2 duplicates) → preview → import → toast →
+    counts; paste with an invalid row; add / edit / search / delete an item; delete an empty
+    category; the phone sweep
+- Checks: lint ✓, typecheck ✓, tests ✓, E2E ✓, build ✓.
+
 ## External setup still needed (by you)
 
 - Google Cloud OAuth client: Drive API, scope `drive.file`, redirect
