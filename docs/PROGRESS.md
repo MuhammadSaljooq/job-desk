@@ -213,6 +213,71 @@ Done:
     staff can't delete; mobile profile
 - Checks: lint ✓, typecheck ✓, tests ✓, E2E ✓, build ✓.
 
+## Phase 5: job site photos (2026-10-01)
+
+- **Storage layer** (`src/lib/storage/`):
+  - The `StorageProvider` interface: ensureFolder, createUploadSession, finalizeUpload,
+    getFile (redirect or stream), webLink, move, delete.
+  - Google Drive (`drive.file`) and Dropbox, using their REST APIs through `fetch`. No
+    googleapis or dropbox SDKs (fewer dependencies). Tokens refresh automatically; a 401
+    triggers one retry, then the connection is marked REVOKED.
+  - `FakeStorage` for tests.
+  - `DevLocalStorage`: **development only** (`STORAGE_DEV_LOCAL=1`, refused in production).
+    Files go in `.storage/{businessId}/` with a path-escape guard, so photos work before the
+    OAuth apps exist.
+- `paths.ts` builds `JobDesk/Customers/{Customer}/{Job or General}/{Before|During|After}/YYYY-MM-DD_HHmm_{id}.jpg`
+  with names sanitised for Drive, Dropbox, Windows and macOS. Renaming a customer or job moves
+  its photos (`relocatePhotos`).
+- `src/lib/crypto.ts`: AES-256-GCM for refresh tokens (`v1.iv.tag.ct`), plus HMAC-signed,
+  expiring tokens for upload sessions and OAuth state.
+- OAuth:
+  - `/api/storage/connect/[provider]`: owner only; the state is signed and a nonce cookie
+    guards against CSRF.
+  - `/api/storage/callback/[provider]`: exchanges the code (offline access), gets the account
+    email, creates the `JobDesk/Customers` folder, stores the refresh token encrypted, one
+    connection per business.
+  - Missing keys redirect to `/settings?storage=not-configured`.
+- Upload flow:
+  1. The browser compresses the photo (browser-image-compression, 1600px, ~0.75).
+  2. `POST /api/storage/upload-session` checks the customer / job belong to the business, the
+     file is an image and ≤ 15 MB, and returns the provider upload URL + a signed ticket.
+  3. The browser PUTs / POSTs straight to the provider (XHR progress per file).
+  4. `savePhotosAction` verifies each ticket (same user, not expired), confirms the file with
+     the provider and stores provider / fileId / path only, with **one** activity per batch
+     ("2 During photos added to Unit 12 turnover").
+- `GET /api/photos/[id]/file?size=thumb|full` checks access, then redirects to a short-lived
+  link (Drive thumbnailLink at =s480 / =s1600, Dropbox temporary link) cached for about 4 min,
+  or streams the bytes (Dropbox thumbnails, dev storage) with nosniff + a sandbox CSP.
+- UI:
+  - Photos tab, matching shot-photos.png: ProfileCard + upload card (attach to job / General,
+    Before / During / After, drop zone with `accept="image/*" capture="environment"`, multiple
+    files, progress)
+  - "Connect Google Drive / Dropbox" for the owner, "Ask the owner…" for staff, Reconnect when
+    revoked
+  - gallery with filter tabs + counts, caption search, groups by job (newest first) with the
+    stage pill, Before → During → After order inside a group, After gets the white badge
+  - photo viewer: edit caption / stage / job (moves the file), delete (also removes it from
+    storage), Open in Drive / Dropbox, ← → keys
+  - `/photos` all-photos gallery filtered by customer, stage and date range
+  - `latestPhotos()` for the dashboard
+- Seed: 13 placeholder photos in dev storage when `STORAGE_DEV_LOCAL=1`. Each database clears
+  only its own businesses' folders, since E2E shares `.storage`.
+- Tests:
+  - 104 Vitest: full upload flow with FakeStorage (rejects non-images, >15 MB, other
+    businesses, other customers' jobs, foreign or unfinished tickets), stage / job moves,
+    rename relocation, delete-in-storage, latest six, no-storage messages, crypto
+    round-trip / tamper / expiry
+  - Drive and Dropbox request shapes against a scripted fetch: folder chain + caching, CORS
+    origin header, thumbnail sizing, finalize parent check, 401 retry → revoked,
+    invalid_grant, temp upload link, metadata, move, delete-409
+  - 15 Playwright E2E: a **real JPEG uploaded through the browser pipeline**, thumbnail loads,
+    caption + move to After, delete; gallery filters / search / arrow keys; all-photos
+    filters; camera input on phone
+- **To go live with real storage:** add `GOOGLE_CLIENT_ID/SECRET` and/or
+  `DROPBOX_APP_KEY/SECRET` to `.env`, set `STORAGE_DEV_LOCAL=0`, and connect from Settings
+  (phase 10 adds the Storage card; `/api/storage/connect/google` already works).
+- Checks: lint ✓, typecheck ✓, tests ✓, E2E ✓, build ✓.
+
 ## External setup still needed (by you)
 
 - Google Cloud OAuth client: Drive API, scope `drive.file`, redirect

@@ -7,6 +7,7 @@ import { ActionError, runAction } from "@/lib/action"
 import { zonedInstant } from "@/lib/dates"
 import { STAGE_META, type JobStage } from "@/lib/status"
 import { jobSchema, stageSchema, type JobInput } from "./schema"
+import { relocatePhotos } from "@/features/photos/service"
 
 async function ownJob(businessId: string, jobId: unknown) {
   if (typeof jobId !== "string" || !jobId) throw new ActionError("Job not found.")
@@ -117,6 +118,8 @@ export async function updateJobAction(jobId: string, input: JobInput) {
         await tx.activity.create({ data: stageActivity(user, existing, data.stage) })
       }
     })
+    // Keep the Drive / Dropbox folder named after the job.
+    if (data.title !== existing.title) await relocatePhotos(user.businessId, { jobId: existing.id })
     revalidateJob(existing.customerId)
     return { id: existing.id }
   })

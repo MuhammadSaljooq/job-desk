@@ -5,6 +5,7 @@ import { db } from "@/lib/db"
 import { requireOwner, requireUser } from "@/lib/auth"
 import { ActionError, runAction } from "@/lib/action"
 import { customerSchema, noteSchema, type CustomerInput } from "./schema"
+import { relocatePhotos } from "@/features/photos/service"
 
 async function ownCustomer(businessId: string, customerId: unknown) {
   if (typeof customerId !== "string" || !customerId) throw new ActionError("Customer not found.")
@@ -45,9 +46,11 @@ export async function createCustomerAction(input: CustomerInput) {
 export async function updateCustomerAction(customerId: string, input: CustomerInput) {
   return runAction(async () => {
     const user = await requireUser()
-    await ownCustomer(user.businessId, customerId)
+    const before = await ownCustomer(user.businessId, customerId)
     const data = customerSchema.parse(input)
     await db.customer.update({ where: { id: customerId }, data })
+    // Keep the Drive / Dropbox folders named after the customer.
+    if (data.name !== before.name) await relocatePhotos(user.businessId, { customerId })
     revalidatePath("/customers")
     revalidatePath(`/customers/${customerId}`, "layout")
     return { id: customerId }

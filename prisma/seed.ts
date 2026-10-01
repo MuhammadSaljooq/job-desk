@@ -11,6 +11,8 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "../src/generated/prisma/client"
 import { dayInZone } from "../src/lib/dates"
 import { seedSampleRecords } from "../src/features/settings/sample-data"
+import { seedSamplePhotos } from "../src/features/settings/sample-photos"
+import { rm } from "node:fs/promises"
 
 const DEMO_PASSWORD = "jobdesk123"
 const TIMEZONE = "America/New_York"
@@ -25,6 +27,11 @@ async function main() {
 
   try {
     // Wipe everything (dev only). Business cascades to every business-owned table.
+    // Dev-local photo folders are per business; remove only this database's businesses' files
+    // (the E2E database shares the .storage folder).
+    for (const b of await db.business.findMany({ select: { id: true } })) {
+      await rm(`.storage/${b.id}`, { recursive: true, force: true })
+    }
     await db.verificationToken.deleteMany()
     await db.business.deleteMany()
 
@@ -80,6 +87,15 @@ async function main() {
       team: { ownerId: owner.id, jordanId: jordan.id, alexId: alex.id },
     })
 
+    // Demo photos go to the dev-only local storage (never in production).
+    if (process.env.STORAGE_DEV_LOCAL === "1") {
+      await seedSamplePhotos(db, {
+        businessId: business.id,
+        timezone: TIMEZONE,
+        uploadedById: jordan.id,
+      })
+    }
+
     const counts = {
       users: await db.user.count(),
       categories: await db.catalogCategory.count(),
@@ -90,6 +106,7 @@ async function main() {
       quoteLines: await db.quoteLine.count(),
       transactions: await db.transaction.count(),
       activities: await db.activity.count(),
+      photos: await db.photo.count(),
     }
     console.log("Seeded:", counts)
     console.log(`Sign in: owner@jobdesk.test / ${DEMO_PASSWORD}`)
