@@ -92,3 +92,28 @@ describe("calendar month grid", () => {
     expect(monthGrid("2026-06")[0]).toBe("2026-06-01")
   })
 })
+
+import { zonedInstant, timeInZone, dayToDbDate, dbDateToDay } from "@/lib/dates"
+
+describe("zoned instants", () => {
+  it("converts local wall-clock time to UTC (EDT and EST)", () => {
+    expect(zonedInstant("2026-10-02", "09:00", "America/New_York").toISOString()).toBe(
+      "2026-10-02T13:00:00.000Z"
+    )
+    expect(zonedInstant("2026-12-15", "09:00", "America/New_York").toISOString()).toBe(
+      "2026-12-15T14:00:00.000Z"
+    )
+    expect(zonedInstant("2026-10-02", "09:00", "UTC").toISOString()).toBe(
+      "2026-10-02T09:00:00.000Z"
+    )
+  })
+  it("round-trips through timeInZone and dayInZone", () => {
+    const i = zonedInstant("2026-11-01", "23:30", "America/Los_Angeles")
+    expect(timeInZone(i, "America/Los_Angeles")).toBe("23:30")
+    expect(dayInZone(i, "America/Los_Angeles")).toBe("2026-11-01")
+  })
+  it("stores DATE columns as UTC midnight of the local day", () => {
+    expect(dayToDbDate("2026-09-29").toISOString()).toBe("2026-09-29T00:00:00.000Z")
+    expect(dbDateToDay(dayToDbDate("2026-09-29"))).toBe("2026-09-29")
+  })
+})

@@ -82,13 +82,44 @@ Done:
   machine. E2E runs on 3100.
 - Checks: lint ✓, typecheck ✓, 20 unit tests ✓, `next build` ✓.
 
+## Phase 2: database, schema and seed (2026-10-01)
+
+- Postgres 16 runs via `docker compose up -d` on host port **5442** (`jobdesk-db`). The test
+  database `jobdesk_test` is on the same server.
+- Prisma 7.10:
+  - `prisma.config.ts` holds the URL. `prisma generate` works without one (fresh clone / CI);
+    migrate and seed need it.
+  - The client is generated into `src/generated/prisma` (gitignored) and regenerated on
+    `postinstall`.
+  - `src/lib/db.ts` is a singleton with the `PrismaPg` adapter.
+- Schema = PLAN.md section 3, with:
+  - the Auth.js adapter tables (Account, Session, VerificationToken)
+  - a `DEV_LOCAL` storage provider (dev only, for photos before Drive/Dropbox)
+  - a `JOB_REMINDER` activity type (D4)
+  - Migration: `20261001114026_init`.
+- Conventions:
+  - DATE columns (Quote.date, Transaction.date) store the business-local day as UTC midnight
+    (`dayToDbDate` / `dbDateToDay`).
+  - Job times are real instants built with `zonedInstant(day, "09:00", tz)`.
+- `src/lib/money.ts`: string → cents parsing with no floats, `formatMoney`, `formatSigned`,
+  `centsToInput`, `sum`, `percentToBps`, `formatBps`, `marginPercent`.
+- Seed (`pnpm db:seed`) comes from `src/features/settings/sample-data.ts`, which phase 10 reuses
+  for "Reload / clear sample data":
+  - 3 users, 9 categories, 44 items, 6 customers, 10 jobs (all stages), 6 quotes / 20 lines,
+    22 transactions, 7 activities
+  - Demo login: `owner@jobdesk.test` / `jobdesk123`. Staff: `jordan@` and `alex@jobdesk.test`.
+- Checked in SQL against the screenshots: Q-1001 $338.04, Q-1002 $1,206.36, Q-1003 $480.60,
+  Q-1004 $235.44, Q-1006 $356.40 with an unpriced fan line, unpaid balance $841.80.
+- Tests: Vitest now has two projects, `unit` and `integration`. Integration tests use a real
+  Postgres (`jobdesk_test`); the guard refuses any database not named `*_test`. 38 tests pass.
+- Checks: lint ✓, typecheck ✓, tests ✓, build ✓.
+
 ## External setup still needed (by you)
 
 - Google Cloud OAuth client: Drive API, scope `drive.file`, redirect
   `http://localhost:3210/api/storage/callback/google`.
 - Dropbox scoped app: `files.content.read` and `files.content.write`, redirect
   `http://localhost:3210/api/storage/callback/dropbox`.
-- Docker Desktop, for local Postgres.
 
 ## Next
 

@@ -1,0 +1,452 @@
+// JobDesk data model (docs/PLAN.md section 3, decisions D1-D21).
+// Conventions: cuid ids, createdAt/updatedAt everywhere, every business-owned row has a
+// businessId. Money is integer cents, tax is basis points (800 = 8%). Derived values
+// (progress %, overdue, paid status, balances, counts) are computed, never stored.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------- enums
+
+enum Role {
+  OWNER
+  STAFF
+}
+
+enum StorageProvider {
+  GOOGLE_DRIVE
+  DROPBOX
+  DEV_LOCAL // development only (STORAGE_DEV_LOCAL=1); never used in production
+}
+
+enum StorageStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum CustomerType {
+  HOMEOWNER
+  LANDLORD
+  BUSINESS
+}
+
+enum CustomerStatus {
+  ACTIVE
+  PAST
+}
+
+enum JobStage {
+  LEAD
+  QUOTED
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum PhotoStage {
+  BEFORE
+  DURING
+  AFTER
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  DECLINED
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum TransactionCategory {
+  // INCOME
+  JOB_PAYMENT
+  DEPOSIT
+  OTHER_INCOME
+  // EXPENSE
+  MATERIALS
+  TOOLS_EQUIPMENT
+  FUEL_VEHICLE
+  SUBCONTRACTOR
+  INSURANCE
+  MARKETING
+  SOFTWARE
+  OTHER_EXPENSE
+}
+
+enum ActivityType {
+  NOTE
+  CUSTOMER_CREATED
+  JOB_CREATED
+  JOB_STAGE_CHANGED
+  PHOTO_UPLOADED
+  QUOTE_SENT
+  QUOTE_ACCEPTED
+  QUOTE_DECLINED
+  PAYMENT_RECORDED
+  NEW_LEAD
+  JOB_REMINDER
+}
+
+// ---------------------------------------------------------------- business and people
+
+model Business {
+  id                 String   @id @default(cuid())
+  name               String
+  tagline            String?
+  logoFileId         String? // original in the connected Drive / Dropbox (D15)
+  logoThumb          Bytes? // resized copy for PDFs and the header, max 400px (D15)
+  logoMime           String?
+  phone              String?
+  email              String?
+  address            String?
+  currency           String   @default("USD")
+  timezone           String   @default("America/New_York") // D13
+  taxRateBps         Int      @default(800)
+  nextQuoteNumber    Int      @default(1001)
+  quoteFooter        String?
+  notifyJobReminders Boolean  @default(true) // D4: in-app only
+  notifyPayments     Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  users             User[]
+  storageConnection StorageConnection?
+  customers         Customer[]
+  jobs              Job[]
+  photos            Photo[]
+  categories        CatalogCategory[]
+  catalogItems      CatalogItem[]
+  quotes            Quote[]
+  quoteLines        QuoteLine[]
+  transactions      Transaction[]
+  activities        Activity[]
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  businessId         String
+  name               String
+  email              String    @unique
+  emailVerified      DateTime?
+  image              String?
+  passwordHash       String? // bcryptjs (D16)
+  mustChangePassword Boolean   @default(false) // owner-created accounts (D3)
+  role               Role      @default(STAFF)
+  title              String? // display label, e.g. "Technician" (D14)
+  avatarColor        String    @default("#4F7FBF")
+  themePreference    String    @default("system") // system | light | dark
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  business           Business            @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  accounts           Account[]
+  sessions           Session[]
+  assignedJobs       Job[]               @relation("JobAssignees")
+  uploadedPhotos     Photo[]             @relation("PhotoUploader")
+  activities         Activity[]          @relation("ActivityActor")
+  createdTxns        Transaction[]       @relation("TransactionCreator")
+  storageConnections StorageConnection[] @relation("StorageConnector")
+
+  @@index([businessId])
+}
+
+// Auth.js adapter tables (standard shapes; used once magic links are enabled).
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.Text
+  access_token      String?  @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.Text
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model StorageConnection {
+  id                    String          @id @default(cuid())
+  businessId            String          @unique // one per business
+  provider              StorageProvider
+  accountEmail          String
+  encryptedRefreshToken String // AES-256-GCM, see src/lib/crypto.ts
+  rootFolderId          String? // JobDesk folder id (Drive) or path (Dropbox)
+  status                StorageStatus   @default(ACTIVE)
+  connectedById         String
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  connectedBy User     @relation("StorageConnector", fields: [connectedById], references: [id])
+
+  @@index([connectedById])
+}
+
+// ---------------------------------------------------------------- customers and jobs
+
+model Customer {
+  id               String         @id @default(cuid())
+  businessId       String
+  name             String
+  type             CustomerType   @default(HOMEOWNER)
+  phone            String?
+  email            String?
+  address          String?
+  accessNotes      String? // gate code, pets
+  preferredContact String? // "Texts, after 5 pm"
+  notes            String?
+  status           CustomerStatus @default(ACTIVE)
+  isSample         Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  jobs         Job[]
+  photos       Photo[]
+  quotes       Quote[]
+  transactions Transaction[]
+  activities   Activity[]
+
+  @@index([businessId])
+  @@index([businessId, name])
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  businessId  String
+  customerId  String
+  title       String
+  category    String? // free text: "TV & Mounting", "Repairs"
+  stage       JobStage  @default(LEAD)
+  scheduledAt DateTime? // one date and time per job (D8)
+  completedAt DateTime?
+  notes       String?
+  isSample    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  business  Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer  Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  assignees User[]   @relation("JobAssignees")
+  photos    Photo[]
+  quotes    Quote[]
+
+  @@index([businessId])
+  @@index([customerId])
+  @@index([businessId, stage])
+  @@index([businessId, scheduledAt])
+}
+
+model Photo {
+  id           String          @id @default(cuid())
+  businessId   String
+  customerId   String
+  jobId        String?
+  provider     StorageProvider
+  fileId       String
+  path         String
+  mimeType     String
+  sizeBytes    Int?
+  width        Int?
+  height       Int?
+  stage        PhotoStage
+  caption      String?
+  uploadedById String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  job        Job?     @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  uploadedBy User     @relation("PhotoUploader", fields: [uploadedById], references: [id])
+
+  @@index([businessId, createdAt])
+  @@index([customerId])
+  @@index([jobId])
+  @@index([uploadedById])
+}
+
+// ---------------------------------------------------------------- catalog (NO prices)
+
+model CatalogCategory {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  items    CatalogItem[]
+
+  @@unique([businessId, name])
+  @@index([businessId])
+}
+
+model CatalogItem {
+  id         String   @id @default(cuid())
+  businessId String
+  categoryId String
+  name       String
+  nameKey    String // lower(trim(name)) for case-insensitive duplicate checks
+  unit       String   @default("each")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business   Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category   CatalogCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  quoteLines QuoteLine[]
+
+  @@unique([categoryId, nameKey])
+  @@index([businessId])
+  @@index([categoryId])
+}
+
+// ---------------------------------------------------------------- quotes
+
+model Quote {
+  id            String      @id @default(cuid())
+  businessId    String
+  customerId    String
+  jobId         String?
+  number        Int // shown as Q-{number}; assigned when the draft is created (D7)
+  title         String?
+  date          DateTime    @db.Date
+  status        QuoteStatus @default(DRAFT)
+  taxRateBps    Int
+  discountCents Int         @default(0)
+  notes         String?
+  footer        String? // copied from Business.quoteFooter at creation
+  sentAt        DateTime?
+  acceptedAt    DateTime?
+  declinedAt    DateTime?
+  isSample      Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer     Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  job          Job?          @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  lines        QuoteLine[]
+  transactions Transaction[]
+
+  @@unique([businessId, number])
+  @@index([customerId])
+  @@index([jobId])
+  @@index([businessId, status, date])
+}
+
+model QuoteLine {
+  id             String   @id @default(cuid())
+  businessId     String
+  quoteId        String
+  catalogItemId  String?
+  name           String
+  category       String?
+  unit           String?
+  qty            Decimal  @default(1) @db.Decimal(10, 2)
+  unitPriceCents Int? // NULL = not priced yet; blocks send / accept / PDF (D6)
+  sortOrder      Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  quote       Quote        @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  catalogItem CatalogItem? @relation(fields: [catalogItemId], references: [id], onDelete: SetNull)
+
+  @@index([businessId])
+  @@index([quoteId])
+  @@index([catalogItemId])
+}
+
+// ---------------------------------------------------------------- books and activity
+
+model Transaction {
+  id          String              @id @default(cuid())
+  businessId  String
+  type        TransactionType
+  category    TransactionCategory
+  amountCents Int // always positive; the type gives the sign
+  date        DateTime            @db.Date
+  description String
+  customerId  String?
+  quoteId     String?
+  createdById String?
+  isSample    Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  business  Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer  Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  quote     Quote?    @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  createdBy User?     @relation("TransactionCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([businessId, date])
+  @@index([customerId])
+  @@index([quoteId])
+  @@index([createdById])
+}
+
+model Activity {
+  id         String       @id @default(cuid())
+  businessId String
+  type       ActivityType
+  message    String
+  detail     String?
+  customerId String?
+  actorId    String?
+  entity     String // "job" | "quote" | "photo" | "transaction" | "customer"
+  entityId   String
+  readAt     DateTime?
+  isSample   Boolean      @default(false)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  actor    User?     @relation("ActivityActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([businessId, createdAt])
+  @@index([customerId])
+  @@index([actorId])
+}
