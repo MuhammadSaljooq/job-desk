@@ -320,6 +320,64 @@ Done:
     category; the phone sweep
 - Checks: lint ✓, typecheck ✓, tests ✓, E2E ✓, build ✓.
 
+## Phase 7: fast quotes and PDF (2026-10-01)
+
+- New dependencies: `@react-pdf/renderer` (in the stack) and `@dnd-kit/core`, `/sortable`,
+  `/utilities` for drag to reorder lines (approved 2026-10-01).
+- `src/features/quotes/totals.ts` (pure, in cents, unit tested): the discount is capped at the
+  subtotal and negatives are ignored, tax is charged on subtotal minus discount, and lines and
+  tax round half away from zero. Quantities are handled without float drift. The same maths
+  runs in SQL (`sql.ts`) for lists and KPIs.
+- Quote numbers come from `Business.nextQuoteNumber` inside a transaction when the draft is
+  created (D7). They stay unique even when two drafts are created at once.
+- `/quotes`, matching shot-quotes.png:
+  - KPI cards: Drafts, Sent + value waiting, Accepted + value won, Unpaid balance ($841.80 on
+    the seed, D9)
+  - status filter, month picker (All time by default), search
+  - table with status and payment pills (Paid / Part paid / Unpaid / None yet)
+- `/quotes/new`: pick a customer (empty state when there are none).
+- `/quotes/[id]`, matching shot-builder.png:
+  - Quick add: search, category pills, "last quoted $X". A tap adds qty 1 with an EMPTY price
+    and focuses it; a second tap adds +1.
+  - Sheet: customer, job title, date, "When accepted: use job / new job", lines with editable
+    name, qty, typed price, amount, remove and drag to reorder; + Custom line; notes; discount,
+    tax %, total
+  - Debounced autosave that never runs two saves at once, with a "Saved" indicator. A stale
+    version is refused instead of overwriting newer edits.
+  - Actions by status:
+    - Draft: Preview, Mark as sent, Accept, Decline, Delete
+    - Sent: Preview, Accept, Decline
+    - Accepted: PDF, Open job, Record payment until paid, then "Paid in full". Accepted
+      quotes are locked.
+    - Declined: Reopen as draft
+  - Unpriced lines block sending, accepting and the PDF (D6). Typing 0 counts as priced.
+  - Accept creates a SCHEDULED job, or moves a linked Lead / Quoted job to Scheduled. Mark as
+    sent moves a Lead to Quoted. Each writes Activity and shows a toast.
+  - Record payment opens the transaction form, prefilled with the balance, as a Deposit if
+    nothing has been paid yet (else Job Payment) and linked to the quote.
+  - On phones, Quick add stacks above the sheet.
+- `GET /api/quotes/[id]/pdf` renders QuoteDocument: business name and logo, number, date,
+  customer, items, totals, notes, footer. It returns 409 while a line is unpriced.
+  `?download=1` saves the file instead. The ⋮ menu has Download PDF and, on touch devices
+  that can share files, Share PDF (Web Share API, falls back to download) (D5).
+- Bookkeeping groundwork for phase 8: `src/features/books` has the transaction schema,
+  categories, actions (create / update / delete, staff can't delete, links checked against
+  the business) and `TransactionDialog`. The /books page itself is still phase 8.
+- Bug fixed: after a payment the dialog toasted and closed before the page refreshed, so a
+  quick second "Record payment" prefilled the old balance. The refresh now runs in a
+  transition and the button stays disabled until it lands (caught by the E2E test).
+- Tests:
+  - 132 Vitest: totals (screenshot and seed quotes, discount cap, tax, rounding, fractional
+    qty), payment state, numbering under concurrency, autosave versions, line validation,
+    the D6 block, accept → job + Activity, decline / reopen / delete, cross-business
+    isolation, payments and paid in full, transaction link rules, the seed KPIs
+  - 23 Playwright: build a quote from the catalog → price → custom line → discount → reload →
+    PDF + download → send → accept → two payments → Paid; status filter and search; Quick add
+    above the sheet on a phone
+- Not in this phase: route-level loading / error states for all pages are planned for
+  phase 11.
+- Checks: lint ✓, typecheck ✓, tests ✓, E2E ✓, build ✓.
+
 ## External setup still needed (by you)
 
 - Google Cloud OAuth client: Drive API, scope `drive.file`, redirect
@@ -329,4 +387,4 @@ Done:
 
 ## Next
 
-Phase 2: database, schema and seed data.
+Phase 8: bookkeeping (`docs/prompts/08-bookkeeping.md`).
