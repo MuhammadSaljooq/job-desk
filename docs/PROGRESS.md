@@ -114,6 +114,48 @@ Done:
   Postgres (`jobdesk_test`); the guard refuses any database not named `*_test`. 38 tests pass.
 - Checks: lint ✓, typecheck ✓, tests ✓, build ✓.
 
+## Phase 3: auth and the app shell (2026-10-01)
+
+- **Auth.js v5** (beta.32), credentials + JWT sessions (`src/auth.ts`). The Prisma adapter is
+  wired in for future magic links. Passwords use bcryptjs (D16), and a constant-time dummy
+  compare means unknown emails can't be detected by timing.
+- `src/proxy.ts` (Next 16's replacement for middleware) is an optimistic cookie gate that
+  sends visitors to `/login?next=`. `/login` itself checks the session, so a stale cookie
+  can't cause a redirect loop.
+- `src/lib/auth.ts`:
+  - `requireUser()` loads the user, business, role and timezone **from the database on every
+    request** (cached per request), so a role change or deleted user takes effect immediately.
+  - Also provides `requireOwner()` / `assertOwner()`.
+- `src/lib/action.ts`: `ActionResult` `{ok, data} | {ok:false, error, fieldErrors}` and a
+  `runAction()` wrapper that re-throws redirects.
+- Sign in and `/change-password` (for owner-created accounts, D3). `next` is validated with
+  `safeNextPath`, so there are no open redirects.
+  - Fixed: React 19 resets forms after an action, so the email is now echoed back and kept
+    after a wrong password.
+- Shell, matching the screenshots:
+  - top bar: menu + jump-to circles, a centred pill nav, a white tools pill (+ New, bell with
+    unread dot and popover, search), the ink avatar menu
+  - floating dark rail with tooltips, Breadcrumb + FilterPill, the dark toast
+  - Below 768px: logo top bar, bottom tab bar (Home, Customers, Quotes, Books, More) and a More
+    sheet with every rail page, the create actions and sign out.
+  - Fixed: tablet-width overlap (the pill nav flows normally below 1024px), and the mobile
+    buttons that ignored `hidden`.
+- ⌘K search across customers (name, address, email, phone digits), jobs and quotes (any of
+  "1004", "Q-1004", "#1004"), always scoped to the business.
+- Activity: `latestActivity()` shows the customer avatar on the dashboard and the actor on the
+  profile, and highlights the newest unread item. `/activity` page with filters and Mark all
+  read.
+- Placeholder pages for every route.
+- Tests:
+  - 56 Vitest (unit + integration with a mocked Auth session via `signInAs()`)
+  - 6 Playwright E2E (sign in / wrong password / redirect back, pill nav + rail, ⌘K, bell,
+    sign out, mobile tab bar). E2E uses its own `jobdesk_e2e` database (migrated and seeded
+    per run) and a server on port 3100 with `NEXT_DIST_DIR=.next-e2e`.
+- ⚠️ **Disk space: the Mac had only 144 MB free.** That caused the Turbopack panics. I deleted
+  only the regenerable `.next*` caches, which brought it back to 3.7 GB. Free up space before
+  long sessions.
+- Checks: lint ✓, typecheck ✓, 56 tests ✓, 6 E2E ✓, build ✓.
+
 ## External setup still needed (by you)
 
 - Google Cloud OAuth client: Drive API, scope `drive.file`, redirect

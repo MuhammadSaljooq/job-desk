@@ -7,3 +7,4 @@ docs/screens
 playwright-report
 test-results
 coverage
+.next-e2e

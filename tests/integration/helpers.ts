@@ -27,3 +27,8 @@ export async function createBusiness(overrides: { timezone?: string } = {}) {
   const alex = await mk("Alex Lin", `alex-${suffix}@test.dev`, "STAFF")
   return { business, owner, jordan, alex }
 }
+
+/** Make requireUser() return this user for the rest of the test (null = signed out). */
+export function signInAs(user: { id: string } | null) {
+  ;(globalThis as { __testUserId?: string | null }).__testUserId = user?.id ?? null
+}
