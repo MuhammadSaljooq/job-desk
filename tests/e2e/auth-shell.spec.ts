@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test"
-import { OWNER, signIn } from "./helpers"
+import { OWNER, expectNoHorizontalScroll, signIn } from "./helpers"
 
 test.describe("sign in and the app shell", () => {
   test("protected pages send you to sign in, then back", async ({ page }) => {
@@ -78,5 +78,5 @@ test("phone layout uses the bottom tab bar and More sheet @mobile", async ({ pag
   await tabs.getByRole("button", { name: "More" }).click()
   await page.getByRole("dialog").getByRole("link", { name: "Item catalog" }).click()
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Item catalog")
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  await expectNoHorizontalScroll(page)
 })

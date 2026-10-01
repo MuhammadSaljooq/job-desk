@@ -117,3 +117,32 @@ describe("zoned instants", () => {
     expect(dbDateToDay(dayToDbDate("2026-09-29"))).toBe("2026-09-29")
   })
 })
+
+import { monthLabel, monthRange, parseMonthParam, shiftMonth } from "@/lib/month"
+
+describe("month helpers", () => {
+  it("parses ?month=", () => {
+    expect(parseMonthParam("2026-09", "2026-01")).toBe("2026-09")
+    expect(parseMonthParam("all", "2026-01")).toBeNull()
+    expect(parseMonthParam("2026-13", "2026-01")).toBe("2026-01")
+    expect(parseMonthParam(undefined, null)).toBeNull()
+  })
+  it("labels, ranges and shifts months", () => {
+    expect(monthLabel("2026-09")).toBe("September 2026")
+    expect(monthLabel(null)).toBe("All time")
+    expect(monthRange("2026-12")).toEqual({ start: "2026-12-01", end: "2027-01-01" })
+    expect(shiftMonth("2026-01", -1)).toBe("2025-12")
+  })
+})
+
+import { formatWhen, formatDayOf, formatMonthOf } from "@/lib/dates"
+
+describe("display formats in the business timezone", () => {
+  it("formats job times", () => {
+    const i = new Date("2026-10-02T13:00:00Z")
+    expect(formatWhen(i, "America/New_York")).toBe("Fri, Oct 2 · 9:00 am")
+    expect(formatWhen(i, "America/New_York", " at ")).toBe("Fri, Oct 2 at 9:00 am")
+    expect(formatDayOf(i, "America/New_York")).toBe("Oct 2, 2026")
+    expect(formatMonthOf(new Date("2026-08-01T12:00:00Z"), "America/New_York")).toBe("Aug 2026")
+  })
+})

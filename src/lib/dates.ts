@@ -113,3 +113,35 @@ export function dayToDbDate(day: Day): Date {
 export function dbDateToDay(date: Date): Day {
   return date.toISOString().slice(0, 10)
 }
+
+/** "Fri, Oct 2 · 9:00 am" in the business timezone. */
+export function formatWhen(instant: Date, timeZone: string, sep = " · "): string {
+  const day = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(instant)
+  const time = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit" })
+    .format(instant)
+    .replace(" AM", " am")
+    .replace(" PM", " pm")
+  return `${day}${sep}${time}`
+}
+
+/** "Sep 29, 2026" for an instant in the business timezone. */
+export function formatDayOf(instant: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(instant)
+}
+
+/** "Aug 2026" */
+export function formatMonthOf(instant: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-US", { timeZone, month: "short", year: "numeric" }).format(
+    instant
+  )
+}

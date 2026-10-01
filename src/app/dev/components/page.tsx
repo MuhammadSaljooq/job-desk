@@ -82,7 +82,7 @@ export default function DevComponentsPage() {
       </div>
 
       {/* Row 1: ProfileCard + JobCard strip */}
-      <div className="grid gap-[18px] lg:grid-cols-[380px_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 gap-[18px] lg:grid-cols-[380px_minmax(0,1fr)]">
         <ProfileCard
           name="Sarah Mitchell"
           subtitle="Homeowner"
@@ -156,7 +156,7 @@ export default function DevComponentsPage() {
       </div>
 
       {/* Row 2: details, schedule, notes */}
-      <div className="mt-[18px] grid gap-[18px] lg:grid-cols-[380px_minmax(0,1fr)_minmax(0,1.04fr)]">
+      <div className="mt-[18px] grid grid-cols-1 gap-[18px] lg:grid-cols-[380px_minmax(0,1fr)_minmax(0,1.04fr)]">
         <section className="min-w-0 rounded-card bg-surface p-5">
           <header className="mb-1 flex min-h-8 items-center justify-between">
             <h2 className="text-[16px] font-semibold">Customer details</h2>
@@ -322,7 +322,7 @@ export default function DevComponentsPage() {
       {/* ---------------- Component catalogue ---------------- */}
       <h2 className="mt-14 mb-4 text-[18px] font-semibold">Component catalogue</h2>
 
-      <div className="grid gap-[18px] lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-[18px] lg:grid-cols-2">
         <section className="rounded-card bg-surface p-5">
           <h3 className="card-title mb-3">Status pills</h3>
           <div className="flex flex-wrap gap-2">
@@ -364,7 +364,7 @@ export default function DevComponentsPage() {
         </section>
       </div>
 
-      <div className="mt-[18px] grid gap-[18px] sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-[18px] grid grid-cols-1 gap-[18px] sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Revenue" value="$938.04" caption="3 payments" tone="mint" />
         <KpiCard label="Expenses" value="$661.50" caption="6 entries" tone="blush" />
         <KpiCard label="Net profit" value="$276.54" caption="September 2026" />
@@ -376,7 +376,7 @@ export default function DevComponentsPage() {
         />
       </div>
 
-      <div className="mt-[18px] grid gap-[18px] lg:grid-cols-3">
+      <div className="mt-[18px] grid grid-cols-1 gap-[18px] lg:grid-cols-3">
         <JobCard
           dateLabel="Sep 29, 2026"
           title="Bedroom TV mount"
@@ -404,7 +404,7 @@ export default function DevComponentsPage() {
         />
       </div>
 
-      <div className="mt-[18px] grid gap-[18px] lg:grid-cols-2">
+      <div className="mt-[18px] grid grid-cols-1 gap-[18px] lg:grid-cols-2">
         <section className="rounded-card bg-surface">
           <EmptyState
             icon={<Users />}

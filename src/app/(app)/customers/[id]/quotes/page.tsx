@@ -1,16 +1,14 @@
 import type { Metadata } from "next"
-import { requireUser } from "@/lib/auth"
-import { Breadcrumb } from "@/components/shell/breadcrumb"
 import { ComingSoon } from "@/components/shared/coming-soon"
+import { CustomerSubpage } from "@/features/customers/components/customer-subpage"
 
-export const metadata: Metadata = { title: "Customer quotes" }
+export const metadata: Metadata = { title: "Quotes" }
 
-export default async function Page() {
-  await requireUser()
+export default async function Page({ params }: PageProps<"/customers/[id]/quotes">) {
+  const { id } = await params
   return (
-    <>
-      <Breadcrumb title="Customer quotes" backHref="/customers" />
-      <ComingSoon phase={7} what="Customer quotes" />
-    </>
+    <CustomerSubpage customerId={id} title="Quotes">
+      <ComingSoon phase={7} what="This customer’s quotes" />
+    </CustomerSubpage>
   )
 }

@@ -10,3 +10,18 @@ export async function signIn(page: Page, who = OWNER, next = "/") {
   await page.getByRole("button", { name: "Sign in" }).click()
   await expect(page).toHaveURL(new RegExp(`${next.replace(/[?]/g, "\\?")}$`))
 }
+
+/**
+ * No sideways scrolling. On mobile emulation Chrome widens the layout viewport to fit
+ * oversized content (innerWidth grows), so compare against the real viewport width.
+ */
+export async function expectNoHorizontalScroll(page: Page) {
+  const r = await page.evaluate(() => ({
+    layout: window.innerWidth,
+    viewport: document.documentElement.clientWidth,
+    scroll: document.documentElement.scrollWidth,
+  }))
+  const width = page.viewportSize()?.width ?? r.viewport
+  expect(r.layout, "layout viewport wider than the screen").toBeLessThanOrEqual(width)
+  expect(r.scroll, "page scrolls sideways").toBeLessThanOrEqual(width)
+}

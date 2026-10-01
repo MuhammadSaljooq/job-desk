@@ -156,6 +156,63 @@ Done:
   long sessions.
 - Checks: lint ✓, typecheck ✓, 56 tests ✓, 6 E2E ✓, build ✓.
 
+## Phase 4: customers and jobs (2026-10-01)
+
+- **Quote math, ready for phase 7:**
+  - `src/features/quotes/totals.ts`: cents only; lines rounded half away from zero; the
+    discount is capped at the subtotal; tax is charged on subtotal − discount.
+  - `src/features/quotes/sql.ts` is the same math in Postgres. A test checks the two agree for
+    every seeded quote and for awkward cases (fractional quantity, half cents, discounts).
+  - `customerBalances()` returns accepted work, paid and balance per customer (seed total
+    $841.80).
+- Customers list (`/customers`):
+  - card grid 3 / 2 / 1, matching shot-customers.png: avatar, address, latest job + stage
+    pill (overdue jobs shown first)
+  - call / text / directions buttons (disabled when there's no phone or address), job and
+    photo counts, a red "Owes $…" chip
+  - debounced search (`?q=`, name / phone digits / address / email) and a filter pill
+    (`?filter=` all / active / none / owes)
+  - kebab menu: open, edit, delete (owner only), with confirmation
+  - empty and no-match states
+- Customer dialog (React Hook Form + the shared Zod schema; field errors from the server are
+  mapped back to the fields).
+- Job dialog:
+  - customer picker when opened from + New
+  - category suggestions, stage, date + time in the business timezone (09:00 by default)
+  - crew toggles (the server checks assignees belong to the business), notes
+- Customer profile (`/customers/[id]`), matching shot-profile.png:
+  - ProfileCard (message / call / directions / email, customer since, Active / Past)
+  - "Sarah's jobs ▾" jump menu with a JobCard strip
+  - Customer details (copy, call, map, edit)
+  - Job schedule calendar (`?month=`; tapping a day jumps to its job, an empty day starts a
+    job on that date) with Next visit
+  - Notes and messages (add a note; actor avatars)
+  - route tabs with counts, and summary pills (accepted / paid / balance)
+- Jobs tab:
+  - inline optimistic StageSelect, which writes a JOB_STAGE_CHANGED activity and sets or
+    clears completedAt
+  - date, crew, photo count, notes, edit, delete with confirmation
+  - `?job=` scrolls to and highlights a job
+  - Breadcrumb: "● All jobs" filter pill (`?jobs=`) and MonthPicker.
+- Shared: MonthPicker (+ `src/lib/month.ts`), ConfirmDialog, FormField. The Quotes / Payments /
+  Photos tabs share the header and tabs, with content coming in phases 5, 7 and 8.
+- Bugs found by testing and fixed:
+  - The debounced search could fire `router.replace` after you'd navigated away, which
+    pulled you back to /customers.
+  - shadcn's CommandDialog left an invisible "Search" heading on every page.
+  - The Radix Select "item-aligned" mode placed the list off-screen. All selects now anchor
+    under their trigger ("popper").
+  - Grids without explicit columns grew to fit long emails on phones (486px layout on a 390px
+    screen). They now use `grid-cols-1`. The E2E overflow check now compares with the real
+    viewport width.
+  - The URL opens the dialogs (`?new=` / `?edit=`) instead of a setState inside an effect.
+- Tests:
+  - 80 Vitest: customer and job actions, roles, cross-business isolation, filters, search,
+    profile summary, SQL / JS totals parity
+  - 11 Playwright E2E: create customer → add job → Completed; search, filter, edit; + New job;
+    staff can't delete; mobile profile
+- Checks: lint ✓, typecheck ✓, tests ✓, E2E ✓, build ✓.
+
 ## External setup still needed (by you)
 
 - Google Cloud OAuth client: Drive API, scope `drive.file`, redirect

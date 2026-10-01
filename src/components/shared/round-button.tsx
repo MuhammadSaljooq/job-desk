@@ -16,7 +16,7 @@ const SIZE = { sm: "size-8", md: "size-9", lg: "size-10" } as const
 
 function classes({ primary, white, size = "md", className }: Omit<Common, "label" | "children">) {
   return cn(
-    "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 [&_svg]:size-4 [&_svg]:shrink-0",
+    "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors outline-none disabled:cursor-not-allowed disabled:opacity-40 focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 [&_svg]:size-4 [&_svg]:shrink-0",
     SIZE[size],
     primary
       ? "bg-ink text-ink-foreground hover:bg-ink/85"
