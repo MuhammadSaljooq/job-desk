@@ -26,7 +26,7 @@ readability; store it as integer cents. Tax is 8% (800 bps) everywhere.
 | Jordan Reyes | STAFF | Technician | JR | #D09A36 |
 | Alex Lin | STAFF | Technician | AL | #3F8F93 |
 
-## Catalog: 9 categories, 46 items, no prices
+## Catalog: 9 categories, 44 items, no prices
 | # | Category | Items (unit) |
 |---|---|---|
 | 1 | TV & Mounting | TV Wall Mount (Fixed / Tilt) (each); TV Wall Mount (Full Motion) (each); Soundbar Mount (each); In-Wall Cable Concealment (each); Floating Shelf Install (each); Mirror / Artwork Hanging (each) |
@@ -39,12 +39,8 @@ readability; store it as integer cents. Tax is 8% (800 bps) everywhere.
 | 8 | Construction Supplies | Drywall Sheets (sheet); Joint Compound (box); Lumber (each); Screws & Anchors (box); Paint & Primer (gallon); Caulk / Sealant (tube); Mounting Hardware Kit (each) |
 | 9 | Labor & Fees | Hourly Labor (hour); Service Call / Trip Fee (each); Haul-Away / Disposal (load); After-Hours Surcharge (each) |
 
-Counts are 6 + 6 + 5 + 5 + 4 + 4 + 3 + 7 + 4 = 44, plus the two below = 46. Two items appear in
-the screenshots but not in `CAT_SEED`. Add them so the count matches the "46 items" shown in
-shot-builder.png and shot-catalog.png:
-- Assembly: "Shelving / Bookcase Assembly" (each). This is a proposal; the screenshots don't
-  name the missing items.
-- Construction Supplies: "Cable / Wire Kit" (each). This is also a proposal.
+Counts are 6 + 6 + 5 + 5 + 4 + 4 + 3 + 7 + 4 = **44 items** (decision D19). The screenshots
+say "46 items", but we don't invent extras. Dylan's real list replaces this via the importer.
 
 ## Customers (6)
 | Key | Name | Type | Phone | Email | Address | Access notes | Preferred contact | Since |

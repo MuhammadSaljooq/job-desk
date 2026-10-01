@@ -9,7 +9,8 @@ deployment today, but every row is scoped by `businessId` so it can become multi
 - `docs/page-spec.md`: every page, field, status and the data model (the technical spec)
 - `docs/client-overview.md`: what the client expects, in plain words
 - `docs/screens/*.png`: the target look for each page
-- `docs/seed-data.md`: the full catalog (46 items, no prices) and the sample data for the seed
+- `docs/seed-data.md`: the sample catalog (44 items, no prices) and the sample data for the seed
+- `docs/PLAN.md`: routes, data model and the agreed decisions D1–D21 (section 5); follow them
 - `docs/reference/poc-field-service-workspace.html`: the earlier single-file POC. Use it for its
   logic and data only; its visual style is NOT the target.
 

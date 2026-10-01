@@ -8,7 +8,7 @@ Workflow system for Dylan, built by Higher Next Solutions with Claude Code in VS
   "JobDesk: Page by Page Product Spec")
 - docs/client-overview.md: plain-language overview for Dylan (export of the Claude Doc
   "Your New Workflow System")
-- docs/seed-data.md: the 46-item catalog and the sample data for prisma/seed.ts
+- docs/seed-data.md: the 44-item sample catalog and the sample data for prisma/seed.ts
 - docs/reference/poc-field-service-workspace.html: the earlier single-file POC (logic and data
   only; its visual style is not the target)
 - docs/prompts/: one prompt per build phase (00 to 11) plus fix-up prompts
