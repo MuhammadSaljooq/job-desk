@@ -1,0 +1,252 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Dark mode is driven by data-theme on <html> (next-themes, attribute="data-theme"). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ------------------------------------------------------------------
+   JobDesk design tokens (CLAUDE.md > Design system).
+   Values measured from docs/screens (1440px CSS, captured at 1.25x).
+   Components use these tokens only; never hardcode hex values.
+   ------------------------------------------------------------------ */
+:root {
+  /* surfaces */
+  --bg: #dfe7de;
+  --surface: #ffffff;
+  --surface-muted: #f3f5f3;
+  --divider: #eef1ee;
+
+  /* ink and text */
+  --ink: #17191a;
+  --ink-foreground: #ffffff;
+  --ink-soft: #2d3436;
+  --rail-active: #3b3f41;
+  --text: #17191a;
+  --text-muted: #6b716c;
+  --text-subtle: #9aa09b;
+
+  /* pastel status pairs */
+  --sky: #dcebfb;
+  --sky-ink: #2f6fd6;
+  --peach: #fcebd6;
+  --peach-ink: #b36b00;
+  --peach-bar: #f0a53a;
+  --blush: #fbdfe3;
+  --blush-ink: #c2303a;
+  --blush-bar: #e5484d;
+  --mint: #ddf3e4;
+  --mint-ink: #1f8a4c;
+  --lavender: #e8e5fb;
+  --lavender-ink: #5b4fd6;
+  --neutral-pill: #f3f5f3;
+  --neutral-ink: #6b716c;
+  --slate: #8e98a8;
+
+  --success-dot: #38d27a;
+  --danger: #e5484d;
+
+  /* shape */
+  --float-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+
+  /* shadcn semantic variables, mapped onto JobDesk tokens */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface);
+  --popover-foreground: var(--text);
+  --primary: var(--ink);
+  --primary-foreground: var(--ink-foreground);
+  --secondary: var(--surface-muted);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--surface-muted);
+  --accent-foreground: var(--text);
+  --destructive: var(--blush-ink);
+  --border: var(--divider);
+  --input: var(--surface-muted);
+  --ring: var(--ink);
+  --radius: 12px;
+  --chart-1: var(--mint-ink);
+  --chart-2: var(--blush-bar);
+  --chart-3: var(--sky-ink);
+  --chart-4: var(--peach-bar);
+  --chart-5: var(--lavender-ink);
+}
+
+/* Dark mode: proposed tokens (decision D18), reviewed in phase 10. */
+[data-theme="dark"] {
+  --bg: #111413;
+  --surface: #1b1f1e;
+  --surface-muted: #252a28;
+  --divider: #2c3230;
+
+  --ink: #f2f5f2;
+  --ink-foreground: #111413;
+  --ink-soft: #3a4144;
+  --rail-active: #2f3533;
+  --text: #f2f5f2;
+  --text-muted: #9aa39c;
+  --text-subtle: #6f7771;
+
+  --sky: rgb(110 160 240 / 0.18);
+  --sky-ink: #7fb0f5;
+  --peach: rgb(240 165 58 / 0.18);
+  --peach-ink: #f2b45e;
+  --peach-bar: #f0a53a;
+  --blush: rgb(229 72 77 / 0.2);
+  --blush-ink: #f27a7e;
+  --blush-bar: #e5484d;
+  --mint: rgb(56 210 122 / 0.16);
+  --mint-ink: #5fd18f;
+  --lavender: rgb(140 128 240 / 0.2);
+  --lavender-ink: #a69cf5;
+  --neutral-pill: #252a28;
+  --neutral-ink: #9aa39c;
+  --slate: #7d8796;
+  --float-shadow: 0 8px 24px rgb(0 0 0 / 0.45);
+}
+
+/* The rail and toast stay dark in both themes. */
+:root {
+  --rail: #17191a;
+  --rail-foreground: #c9cfcb;
+  --toast: #17191a;
+  --toast-foreground: #ffffff;
+}
+
+@theme inline {
+  /* JobDesk utilities: bg-surface, text-ink, bg-sky, text-sky-ink, ... */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-divider: var(--divider);
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
+  --color-ink-soft: var(--ink-soft);
+  --color-rail: var(--rail);
+  --color-rail-foreground: var(--rail-foreground);
+  --color-rail-active: var(--rail-active);
+  --color-toast: var(--toast);
+  --color-toast-foreground: var(--toast-foreground);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+  --color-sky: var(--sky);
+  --color-sky-ink: var(--sky-ink);
+  --color-peach: var(--peach);
+  --color-peach-ink: var(--peach-ink);
+  --color-peach-bar: var(--peach-bar);
+  --color-blush: var(--blush);
+  --color-blush-ink: var(--blush-ink);
+  --color-blush-bar: var(--blush-bar);
+  --color-mint: var(--mint);
+  --color-mint-ink: var(--mint-ink);
+  --color-lavender: var(--lavender);
+  --color-lavender-ink: var(--lavender-ink);
+  --color-neutral-pill: var(--neutral-pill);
+  --color-neutral-ink: var(--neutral-ink);
+  --color-slate: var(--slate);
+  --color-success-dot: var(--success-dot);
+  --color-danger: var(--danger);
+
+  --radius-card: 22px;
+  --radius-field: 12px;
+  --radius-tile: 16px;
+  --shadow-float: var(--float-shadow);
+
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* shadcn mappings */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    color-scheme: light;
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-bg text-text antialiased;
+    font-size: 14px;
+  }
+  /* money, tables and dates line up */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* White floating card used by every panel. */
+  .card {
+    @apply rounded-card bg-surface p-5;
+  }
+  .card-title {
+    @apply text-base font-semibold text-text;
+  }
+  .field-label {
+    @apply text-[11px] font-medium text-text-muted;
+  }
+  /* Horizontal strips (job cards) scroll sideways without a visible bar. */
+  .scroll-strip {
+    @apply flex snap-x snap-mandatory gap-[18px] overflow-x-auto;
+    scrollbar-width: none;
+  }
+  .scroll-strip::-webkit-scrollbar {
+    display: none;
+  }
+  .scroll-strip > * {
+    @apply snap-start;
+  }
+}

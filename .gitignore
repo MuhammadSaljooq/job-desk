@@ -1,8 +1,40 @@
-node_modules/
-.next/
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# testing
+/coverage
+/playwright-report/
+/test-results/
+/blob-report/
+/playwright/.cache/
+
+# next.js
+/.next/
+/out/
+/build
+
+# prisma generated client
+/src/generated/
+
+# local dev photo storage (dev-only provider)
+/.storage/
+
+# misc
+.DS_Store
+*.pem
+npm-debug.log*
+.pnpm-debug.log*
+
+# env files
 .env
 .env*.local
-.DS_Store
-coverage/
-playwright-report/
-test-results/
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts

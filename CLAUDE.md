@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # JobDesk
 
 A simple workflow system for Dylan, who runs a small home service business (TV mounting,
@@ -6,6 +8,7 @@ an item catalog, fast quotes with PDF, bookkeeping and a dashboard. There is one
 deployment today, but every row is scoped by `businessId` so it can become multi-tenant later.
 
 ## Source of truth
+
 - `docs/page-spec.md`: every page, field, status and the data model (the technical spec)
 - `docs/client-overview.md`: what the client expects, in plain words
 - `docs/screens/*.png`: the target look for each page
@@ -19,12 +22,14 @@ disagree, ask. The two `.md` docs are exports of the Claude Docs listed in their
 remain the master copies.
 
 ## Core features
+
 1. Customer and job dashboard (pipeline: Lead, Quoted, Scheduled, In Progress, Completed)
 2. Job site photos per customer, tagged Before / During / After and linked to a job
 3. Bookkeeping: revenue and expenses with categories, linked to customers and quotes
 4. Fast quotes: pick items from a catalog and type the price per quote (the catalog stores NO prices)
 
 ## Workflow
+
 - Build in phases from `docs/prompts/00..11`, one phase per session. Don't start the next phase
   until I say so.
 - Before coding a phase, show a short plan and wait for my OK. Phases 0, 2, 5 and 7 need a full
@@ -39,6 +44,7 @@ remain the master copies.
 - No new dependencies beyond the stack below without asking me first.
 
 ## Tech stack
+
 Next.js 15 (App Router, Server Components, Server Actions) + TypeScript strict, pnpm,
 Tailwind v4 + shadcn/ui + lucide-react, Plus Jakarta Sans via next/font,
 React Hook Form + Zod, PostgreSQL 16 + Prisma, Auth.js v5 (Prisma adapter),
@@ -48,12 +54,14 @@ Vitest, Playwright, Docker Compose, ESLint + Prettier + Husky + lint-staged, Git
 Hosting is decided in phase 11: Vercel + Neon, or AWS (ECS Fargate + RDS).
 
 ## Commands
+
 ```
 pnpm dev | pnpm lint | pnpm typecheck | pnpm test | pnpm test:e2e
 pnpm db:migrate | pnpm db:seed | pnpm db:studio | docker compose up -d
 ```
 
 ## Folder layout
+
 ```
 src/app/(auth)/login        sign in
 src/app/(app)/...           every signed-in page (layout.tsx is the shell)
@@ -69,6 +77,7 @@ tests/unit, tests/e2e, tests/fixtures
 ```
 
 ## Code rules
+
 - Code goes in feature folders. Use Server Components by default, and add `"use client"` only
   where interaction needs it.
 - Mutations are server actions, validated with Zod. They return `{ ok: true, data } | { ok: false, error }`.
@@ -112,40 +121,42 @@ for the active state and the most important items. Pastel cards show status. No 
 cards, and almost no shadow.
 
 ### Colors (light)
+
 The spec's "suggested values" are close to these. The values below were sampled from the
 screenshots and take precedence.
 
-| Token | Hex | Use |
-|---|---|---|
-| `--bg` | `#DFE7DE` | canvas (spec suggests #DDE5DC) |
-| `--surface` | `#FFFFFF` | cards, nav pill, header buttons |
-| `--surface-muted` | `#F3F5F3` | inputs, round icon buttons, segmented track, inner panels, neutral pills |
-| `--divider` | `#EEF1EE` | 1px row dividers inside cards |
-| `--ink` | `#17191A` | text, active nav pill, primary button, icon rail, toast, highlighted inbox row |
-| `--ink-soft` | `#2D3436` | owner "ME" avatar |
-| `--rail-active` | `#3B3F41` | active icon circle on the rail |
-| `--text-muted` | `#6B716C` | secondary text, labels, table headers (spec: #8A8F8A) |
-| `--text-subtle` | `#9AA09B` | placeholders, "None", "Not yet" |
-| `--sky` / `--sky-ink` | `#DCEBFB` / `#2F6FD6` | Scheduled, Sent |
-| `--peach` / `--peach-ink` | `#FCEBD6` / `#B36B00` | In progress, Part paid (bar `#F0A53A`) |
-| `--blush` / `--blush-ink` | `#FBDFE3` / `#C2303A` | Overdue, Expenses KPI, Unpaid, danger (bar/dot `#E5484D`) |
-| `--mint` / `--mint-ink` | `#DDF3E4` / `#1F8A4C` | Completed, Accepted, Paid, Active, Revenue KPI, income amounts |
-| `--lavender` / `--lavender-ink` | `#E8E5FB` / `#5B4FD6` | Quoted |
-| `--neutral-pill` / `--neutral-ink` | `#F3F5F3` / `#6B716C` | Lead, Draft, category pills |
-| `--success-dot` | `#38D27A` | green dot in toasts |
-| `--danger` | `#E5484D` | notification dot, overdue calendar chip, expense bars |
+| Token                              | Hex                   | Use                                                                            |
+| ---------------------------------- | --------------------- | ------------------------------------------------------------------------------ |
+| `--bg`                             | `#DFE7DE`             | canvas (spec suggests #DDE5DC)                                                 |
+| `--surface`                        | `#FFFFFF`             | cards, nav pill, header buttons                                                |
+| `--surface-muted`                  | `#F3F5F3`             | inputs, round icon buttons, segmented track, inner panels, neutral pills       |
+| `--divider`                        | `#EEF1EE`             | 1px row dividers inside cards                                                  |
+| `--ink`                            | `#17191A`             | text, active nav pill, primary button, icon rail, toast, highlighted inbox row |
+| `--ink-soft`                       | `#2D3436`             | owner "ME" avatar                                                              |
+| `--rail-active`                    | `#3B3F41`             | active icon circle on the rail                                                 |
+| `--text-muted`                     | `#6B716C`             | secondary text, labels, table headers (spec: #8A8F8A)                          |
+| `--text-subtle`                    | `#9AA09B`             | placeholders, "None", "Not yet"                                                |
+| `--sky` / `--sky-ink`              | `#DCEBFB` / `#2F6FD6` | Scheduled, Sent                                                                |
+| `--peach` / `--peach-ink`          | `#FCEBD6` / `#B36B00` | In progress, Part paid (bar `#F0A53A`)                                         |
+| `--blush` / `--blush-ink`          | `#FBDFE3` / `#C2303A` | Overdue, Expenses KPI, Unpaid, danger (bar/dot `#E5484D`)                      |
+| `--mint` / `--mint-ink`            | `#DDF3E4` / `#1F8A4C` | Completed, Accepted, Paid, Active, Revenue KPI, income amounts                 |
+| `--lavender` / `--lavender-ink`    | `#E8E5FB` / `#5B4FD6` | Quoted                                                                         |
+| `--neutral-pill` / `--neutral-ink` | `#F3F5F3` / `#6B716C` | Lead, Draft, category pills                                                    |
+| `--success-dot`                    | `#38D27A`             | green dot in toasts                                                            |
+| `--danger`                         | `#E5484D`             | notification dot, overdue calendar chip, expense bars                          |
 
 Income amounts use `--mint-ink` with a "+". Expense amounts use `--blush-ink` with a "−".
 
 **Job stage → color**
-| Stage | JobCard bg | Pill | Calendar chip | Progress |
-|---|---|---|---|---|
-| LEAD | surface-muted | neutral | `#8E98A8` slate | 10% |
-| QUOTED | lavender | lavender | `#5B4FD6` indigo | 30% |
-| SCHEDULED | sky | sky | `#2F6FD6` blue | 50% |
-| IN_PROGRESS | peach | peach | `#F0A53A` amber | 75% |
-| COMPLETED | mint | mint | `#1F8A4C` green | 100% |
-| overdue (date passed, not completed) | blush | blush | `#E5484D` red | keeps its stage % |
+
+| Stage                                | JobCard bg    | Pill     | Calendar chip    | Progress          |
+| ------------------------------------ | ------------- | -------- | ---------------- | ----------------- |
+| LEAD                                 | surface-muted | neutral  | `#8E98A8` slate  | 10%               |
+| QUOTED                               | lavender      | lavender | `#5B4FD6` indigo | 30%               |
+| SCHEDULED                            | sky           | sky      | `#2F6FD6` blue   | 50%               |
+| IN_PROGRESS                          | peach         | peach    | `#F0A53A` amber  | 75%               |
+| COMPLETED                            | mint          | mint     | `#1F8A4C` green  | 100%              |
+| overdue (date passed, not completed) | blush         | blush    | `#E5484D` red    | keeps its stage % |
 
 - The progress bar is 4px, filled with the stage's strong color. Its track is the card color
   darkened about 8%.
@@ -157,24 +168,28 @@ semibold.
 
 **Dark mode** (phase 10): use `[data-theme="dark"]` plus `prefers-color-scheme`, with the same
 token names.
+
 - bg `#111413`, surface `#1B1F1E`, surface-muted `#252A28`, divider `#2C3230`
 - ink `#F2F5F2` (the active pill becomes light with dark text), text-muted `#9AA39C`
 - Pastels become about 18% tints of their ink color.
 
 ### Typography (CSS px at 1440)
+
 Use Plus Jakarta Sans everywhere, with `tabular-nums` for money, tables and dates.
-| Role | Size / weight |
-|---|---|
-| Page title (breadcrumb) | 22px / 600 |
-| Card title | 16px / 600 |
-| KPI value | 26px / 700 |
-| Name on ProfileCard / title on JobCard | 17px / 700 |
-| Body, row values, table cells | 14px / 500 |
-| Tiny field label above a value | 11px / 500, text-muted |
-| Pills, chips, table headers | 12px / 600 |
-| Small meta | 12px / 400, text-muted |
+
+| Role                                   | Size / weight          |
+| -------------------------------------- | ---------------------- |
+| Page title (breadcrumb)                | 22px / 600             |
+| Card title                             | 16px / 600             |
+| KPI value                              | 26px / 700             |
+| Name on ProfileCard / title on JobCard | 17px / 700             |
+| Body, row values, table cells          | 14px / 500             |
+| Tiny field label above a value         | 11px / 500, text-muted |
+| Pills, chips, table headers            | 12px / 600             |
+| Small meta                             | 12px / 400, text-muted |
 
 ### Shape and spacing (CSS px at 1440)
+
 - Radius: cards and modals 22px, inner panels and inputs 12px, photo tiles 16px, pills and
   buttons fully rounded.
 - Spacing: card padding 20px, gap between cards 18px (16px on mobile). The content column starts
@@ -192,6 +207,7 @@ Use Plus Jakarta Sans everywhere, with `tabular-nums` for money, tables and date
 - Tables: no outer border, 48px rows with divider lines, money right-aligned.
 
 ### Shell
+
 - **Top bar**:
   - Left: two white 40px circles (menu, apps grid).
   - Centre: a white pill nav with Home, Customers, Quotes and Books, each with an icon. The
@@ -216,6 +232,7 @@ Use Plus Jakarta Sans everywhere, with `tabular-nums` for money, tables and date
   - The quote builder shows Quick add above the sheet.
 
 ### Components
+
 - **ProfileCard**:
   - 56px avatar, name and subtitle (muted), kebab menu.
   - A row of 36px round buttons (message, call, directions, email); the first one is ink.
@@ -238,6 +255,7 @@ Use Plus Jakarta Sans everywhere, with `tabular-nums` for money, tables and date
 - **EmptyState**: one sentence and one primary action.
 
 ## Domain glossary
+
 - Customer type: HOMEOWNER, LANDLORD, BUSINESS. Customer status: ACTIVE, PAST.
 - Job stage: LEAD → QUOTED → SCHEDULED → IN_PROGRESS → COMPLETED.
 - Quote status: DRAFT, SENT, ACCEPTED, DECLINED. Quote numbers look like `Q-1001` and come from
