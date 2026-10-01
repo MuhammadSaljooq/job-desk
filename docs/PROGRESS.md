@@ -378,6 +378,52 @@ Done:
   phase 11.
 - Checks: lint ✓, typecheck ✓, tests ✓, E2E ✓, build ✓.
 
+## Phase 8: bookkeeping (2026-10-01)
+
+- No new dependencies. Phase 7 had already built the transaction form, actions and
+  categories; this phase adds the ledger views on top.
+- `src/features/books/queries.ts`:
+  - `booksSummary` makes one Prisma `groupBy` (type, category) per period, which gives
+    revenue / expenses with counts, net, margin % and both breakdowns
+  - `listTransactions` is filtered by month (business-local day), type and customer
+  - `transactionLinkOptions`: this business's customers and its non-draft quotes
+- `/books`, matching shot-books.png:
+  - month picker (**this month by default**, or All time), Log expense, Record revenue
+  - KPI cards: Revenue + payment count, Expenses + entry count, Net profit, Profit margin %
+    ("None" without revenue)
+  - Transactions card:
+    - All / Revenue / Expenses in the URL (`?type=income|expense`); the cards always show
+      the whole period
+    - date, description, category pill (mint for revenue), customer or "None", and a green +
+      or red − amount
+    - edit; delete with confirmation, for the owner only
+    - empty state with one action
+    - on phones the rows stack (description + amount, then date · category · customer); tap
+      a row to edit it
+  - "Where the money went" (red bars) and "Where it came from" (green bars), scaled to the
+    largest category
+- Export CSV: `GET /api/books/export?month=&type=` exports the current view. The file has a
+  UTF-8 BOM and CRLF line ends, amounts are signed plain numbers so they sum, and text cells
+  starting with `= + - @` are escaped so spreadsheets can't run them as formulas
+  (`csv.ts`, unit tested).
+- Customer > Payments tab: the customer's income for all time, from the ledger, with
+  "Record payment" (customer prefilled). Paid / Balance in the header were already computed
+  from this table.
+- **Seed numbers vs the screenshot:** shot-books.png shows expenses of $661.50, but its own
+  category bars add up to $650.74 (the seed). So September is revenue $938.04 (3), expenses
+  $650.74 (6), net $287.30, margin 31%. The screenshot says $276.54 / 29%.
+- Bug fixed during the phase: the Payments tab crashed because a server page called a
+  helper exported from a `"use client"` file. `blankEntry` now lives in
+  `src/features/books/entry.ts`.
+- Tests:
+  - 144 Vitest: CSV quoting / formula escaping / filename; September and all-time totals
+    and breakdowns from the seed; month boundaries; type and customer filters; link options
+    stay inside the business; staff can edit but not delete; cross-business isolation
+  - 28 Playwright: log → filter → edit → export (checks the CSV contents) → delete; all-time
+    ledger and breakdowns; staff sees no delete; Payments tab + record payment; phone layout
+    with the amount in view
+- Checks: lint ✓, typecheck ✓, tests ✓, E2E ✓, build ✓.
+
 ## External setup still needed (by you)
 
 - Google Cloud OAuth client: Drive API, scope `drive.file`, redirect
@@ -387,4 +433,4 @@ Done:
 
 ## Next
 
-Phase 8: bookkeeping (`docs/prompts/08-bookkeeping.md`).
+Phase 9: dashboard (`docs/prompts/09-dashboard.md`).
