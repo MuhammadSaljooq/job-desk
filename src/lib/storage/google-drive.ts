@@ -170,4 +170,39 @@ export class GoogleDriveStorage implements StorageProvider {
     if (!res.ok && res.status !== 404)
       throw new StorageError(`Drive delete ${res.status}`, res.status)
   }
+
+  async download(fileId: string) {
+    const res = await this.call(`${API}/files/${encodeURIComponent(fileId)}?alt=media`)
+    if (!res.ok) throw new StorageError(`Drive download ${res.status}`, res.status)
+    return {
+      bytes: new Uint8Array(await res.arrayBuffer()),
+      contentType: res.headers.get("content-type") ?? "application/octet-stream",
+    }
+  }
+
+  async put(path: string, bytes: Uint8Array, mimeType: string): Promise<StoredFile> {
+    const { folder, name } = splitPath(path)
+    const parent = await this.ensureFolder(folder)
+    // multipart upload: JSON metadata + the bytes in one request
+    const boundary = `jobdesk${Math.random().toString(36).slice(2)}`
+    const head = new TextEncoder().encode(
+      `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n` +
+        JSON.stringify({ name, parents: [parent], mimeType }) +
+        `\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`
+    )
+    const tail = new TextEncoder().encode(`\r\n--${boundary}--`)
+    const body = new Uint8Array(head.length + bytes.length + tail.length)
+    body.set(head)
+    body.set(bytes, head.length)
+    body.set(tail, head.length + bytes.length)
+    const created = await this.json<{ id: string }>(
+      `${UPLOAD}/files?uploadType=multipart&fields=id`,
+      {
+        method: "POST",
+        headers: { "Content-Type": `multipart/related; boundary=${boundary}` },
+        body,
+      }
+    )
+    return { fileId: created.id, path }
+  }
 }

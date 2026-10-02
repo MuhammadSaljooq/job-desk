@@ -39,6 +39,10 @@ export interface StorageProvider {
   /** Move (and keep the name of) a file to a new path; returns the new path. */
   move(fileId: string, newPath: string): Promise<StoredFile>
   delete(fileId: string): Promise<void>
+  /** The original bytes (server side; used when switching provider). */
+  download(fileId: string): Promise<{ bytes: Uint8Array; contentType: string }>
+  /** Upload from the server (switching provider); keeps the name, never overwrites. */
+  put(path: string, bytes: Uint8Array, mimeType: string): Promise<StoredFile>
 }
 
 /** The connection was revoked or the refresh token no longer works: show "Reconnect". */

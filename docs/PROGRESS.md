@@ -469,6 +469,82 @@ Done:
     on the board; /calendar day sheet; the phone fit; the + New books links
 - Checks: lint ✓, typecheck ✓, tests ✓, E2E ✓, build ✓.
 
+## Phase 10: settings and team (2026-10-02)
+
+- **Migration `settings_storage_switch_team_removal`** (additive, approved):
+  - `StorageConnection.previousProvider / previousAccountEmail /
+previousEncryptedRefreshToken / previousRootFolderId` keep the old connection while
+    photos are copied (D17)
+  - `User.removedAt` soft-removes a team member (their photos, jobs and storage link must
+    keep pointing at them)
+- **Bug found and fixed:** connecting a different provider used to overwrite the connection,
+  so photos in the old Drive / Dropbox stopped loading. The OAuth callback now keeps the old
+  connection as `previous*` when photos are still on it. A third provider is refused until
+  the copy finishes.
+- Storage (`src/lib/storage`):
+  - every provider has `download` and `put` (server-side upload: Drive multipart, Dropbox
+    files/upload, dev-local, fake)
+  - `getStorageFor(kind)` falls back to the previous connection, so old photos keep showing
+    during a switch
+  - `folderLink()` gives the "Open folder" link
+- `/settings`, matching shot-settings.png. The owner edits; staff see it read-only with a
+  note. Every action is role-checked on the server.
+  - Business card: tagline, in business since, Active
+  - Business profile: name, tagline, phone, email, address, **timezone** (D13), logo
+  - Logo (D15): the original goes to Drive / Dropbox through the same direct-upload flow as
+    photos. The browser makes a copy of at most 400px / 30 KB, and the server checks it's
+    really a PNG / JPEG / WebP before saving it as `logoThumb`. Without storage, only the
+    small copy is saved. `/api/settings/logo` serves it.
+  - Quotes: tax %, currency (USD / CAD / AUD / GBP / EUR), next quote number (must be above
+    the highest existing one), footer
+  - Appearance: Match device / Light / Dark, per user (`User.themePreference`, staff too),
+    applied on load by `ThemeSync`
+  - Notifications: job reminders (used by phase 9), payment alerts (recorded payments arrive
+    unread in the bell)
+  - One "Save settings" for these cards, disabled when nothing changed; leaving with unsaved
+    changes asks first
+  - Team (D3, D14):
+    - add a member with a temporary password; `mustChangePassword` makes them pick their
+      own on first sign in
+    - edit name / role / title / colour; reset password (they're signed out)
+    - remove: a soft delete. They can't sign in, come off unfinished jobs and keep their
+      history; the email is freed. Removed members can stay on old jobs but can't be newly
+      assigned.
+    - the business always keeps one owner
+  - Data:
+    - export customers / jobs / transactions as CSV (`/api/settings/export`, owner only,
+      same formula escaping as Books)
+    - reload sample data (demo rows only)
+    - clear all data, which needs the business name typed. It keeps the team, settings and
+      storage; photo files stay in Drive / Dropbox.
+  - Photo storage (owner):
+    - connected account, Open folder, Switch provider, Disconnect (with a warning)
+    - Reconnect when access was revoked; buttons are disabled when the app keys aren't in
+      `.env`
+    - copy progress "Copying 34 of 120" in batches of 5 that resumes whenever Settings is
+      opened. Broken files are skipped and reported; originals are never deleted.
+- `credentials-schema.ts` now holds the password rule shared by the server and the member
+  dialog.
+- Dark mode review (D18):
+  - checked Settings, the dashboard and Books in dark
+  - the rail is lifted to `#232927` (it disappeared into the `#111413` canvas)
+  - photo stage badges stay dark on photos in both themes
+- Bug fixed during the phase: a duplicate React key (two dialogs keyed "closed") showed as
+  "1 Issue" in the dev overlay.
+- Tests:
+  - 167 Vitest: settings save / validation / quote-number guard, staff refused everywhere
+    but appearance, payment alerts, logo checks, adding a member and signing in with the
+    temp password, the last-owner guard, soft remove (no sign in, history kept, can't be
+    newly assigned, email reusable), cross-business isolation, the provider switch copy
+    with two fake providers (batches, a broken file, old access wiped), clear-all and
+    reload sample data, CSV exports
+  - 40 Playwright: edit + save + reload; quote-number guard; add a member who then signs in
+    and lands on Change password, then remove them; customer CSV download; the clear-all
+    typed check; staff read-only + dark mode that survives a reload; phone fit
+- **Restart your dev server** (`pnpm dev`): the one started on Oct 1 still has the old
+  Prisma client, so sign-in there hangs after this migration.
+- Checks: lint ✓, typecheck ✓, tests ✓, E2E ✓, build ✓.
+
 ## External setup still needed (by you)
 
 - Google Cloud OAuth client: Drive API, scope `drive.file`, redirect
@@ -478,4 +554,5 @@ Done:
 
 ## Next
 
-Phase 10: settings and team (`docs/prompts/10-settings-team.md`).
+Phase 11: polish, tests and deploy (`docs/prompts/11-polish-tests-deploy.md`). Hosting (D21)
+must be decided first: Vercel + Neon or AWS.

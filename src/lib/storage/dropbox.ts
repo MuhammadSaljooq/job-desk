@@ -128,4 +128,51 @@ export class DropboxStorage implements StorageProvider {
       if (!(err instanceof StorageError && err.status === 409)) throw err // already gone
     }
   }
+
+  private async content(
+    endpoint: string,
+    arg: unknown,
+    body?: Uint8Array,
+    retry = true
+  ): Promise<Response> {
+    const token = await this.tokens.get()
+    const res = await this.fetchImpl(`${CONTENT}/${endpoint}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Dropbox-API-Arg": JSON.stringify(arg),
+        ...(body ? { "Content-Type": "application/octet-stream" } : {}),
+      },
+      body: body as Uint8Array<ArrayBuffer> | undefined,
+    })
+    if (res.status === 401 && retry) {
+      this.tokens.invalidate()
+      return this.content(endpoint, arg, body, false)
+    }
+    if (res.status === 401) throw new StorageRevokedError()
+    if (!res.ok)
+      throw new StorageError(
+        `Dropbox ${endpoint} ${res.status}: ${(await res.text()).slice(0, 200)}`,
+        res.status
+      )
+    return res
+  }
+
+  async download(fileId: string) {
+    const res = await this.content("files/download", { path: fileId })
+    return {
+      bytes: new Uint8Array(await res.arrayBuffer()),
+      contentType: res.headers.get("content-type") ?? "application/octet-stream",
+    }
+  }
+
+  async put(path: string, bytes: Uint8Array): Promise<StoredFile> {
+    const res = await this.content(
+      "files/upload",
+      { path: abs(path), mode: "add", autorename: true, mute: true },
+      bytes
+    )
+    const meta = (await res.json()) as { id: string; path_display: string }
+    return { fileId: meta.id, path: meta.path_display.replace(/^\//, "") }
+  }
 }

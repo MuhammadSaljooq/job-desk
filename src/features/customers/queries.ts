@@ -177,10 +177,10 @@ export async function getCustomerProfile(businessId: string, customerId: string)
 
 export type CustomerProfile = NonNullable<Awaited<ReturnType<typeof getCustomerProfile>>>
 
-/** Team members for assignee pickers. */
+/** Team members for assignee pickers (removed members are left out). */
 export function listTeam(businessId: string) {
   return db.user.findMany({
-    where: { businessId },
+    where: { businessId, removedAt: null },
     select: { id: true, name: true, avatarColor: true, role: true, title: true },
     orderBy: [{ role: "asc" }, { name: "asc" }],
   })

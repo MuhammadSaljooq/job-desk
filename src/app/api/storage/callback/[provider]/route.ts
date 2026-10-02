@@ -29,7 +29,8 @@ async function accountEmail(provider: OAuthProvider, accessToken: string): Promi
 /**
  * GET /api/storage/callback/google|dropbox: finishes OAuth. Verifies the signed state and
  * the browser nonce, exchanges the code, creates the JobDesk folder and stores the refresh
- * token encrypted (AES-256-GCM). One connection per business: connecting again replaces it.
+ * token encrypted (AES-256-GCM). One connection per business: reconnecting the same provider
+ * replaces it; a different provider keeps the old one as `previous*` until photos are copied.
  */
 export async function GET(request: Request, ctx: RouteContext<"/api/storage/callback/[provider]">) {
   const { provider } = await ctx.params
@@ -67,10 +68,36 @@ export async function GET(request: Request, ctx: RouteContext<"/api/storage/call
       status: "ACTIVE" as const,
       connectedById: user.userId,
     }
+    const existing = await db.storageConnection.findUnique({
+      where: { businessId: user.businessId },
+    })
+    // Switching provider (D17): keep the old connection until its photos are copied across.
+    let previous = {}
+    if (existing && existing.provider !== data.provider) {
+      if (existing.previousProvider && existing.previousProvider !== data.provider)
+        return fail("copying") // a third provider while photos are still on the first
+      const onOld = await db.photo.count({
+        where: { businessId: user.businessId, provider: existing.provider },
+      })
+      previous =
+        onOld > 0 && existing.status === "ACTIVE"
+          ? {
+              previousProvider: existing.provider,
+              previousAccountEmail: existing.accountEmail,
+              previousEncryptedRefreshToken: existing.encryptedRefreshToken,
+              previousRootFolderId: existing.rootFolderId,
+            }
+          : {
+              previousProvider: null,
+              previousAccountEmail: null,
+              previousEncryptedRefreshToken: null,
+              previousRootFolderId: null,
+            }
+    }
     await db.storageConnection.upsert({
       where: { businessId: user.businessId },
       create: { businessId: user.businessId, ...data },
-      update: data,
+      update: { ...data, ...previous },
     })
     return NextResponse.redirect(`${appUrl()}/settings?storage=connected`)
   } catch (err) {

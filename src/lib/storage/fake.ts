@@ -6,7 +6,7 @@ import { StorageError } from "./types"
  * direct upload; everything else behaves like a real provider.
  */
 export class FakeStorage implements StorageProvider {
-  readonly kind = "GOOGLE_DRIVE" as const
+  constructor(readonly kind: "GOOGLE_DRIVE" | "DROPBOX" = "GOOGLE_DRIVE") {}
   folders = new Set<string>()
   files = new Map<string, { path: string; bytes: Uint8Array; mimeType: string }>()
   sessions = new Map<string, { path: string; mimeType: string; size: number; done?: string }>()
@@ -70,5 +70,17 @@ export class FakeStorage implements StorageProvider {
 
   async delete(fileId: string) {
     this.files.delete(fileId)
+  }
+
+  async download(fileId: string) {
+    const f = this.files.get(fileId)
+    if (!f) throw new StorageError("Not found", 404)
+    return { bytes: f.bytes, contentType: f.mimeType }
+  }
+
+  async put(path: string, bytes: Uint8Array, mimeType: string): Promise<StoredFile> {
+    const id = `file-${++this.seq}`
+    this.files.set(id, { path, bytes, mimeType })
+    return { fileId: id, path }
   }
 }

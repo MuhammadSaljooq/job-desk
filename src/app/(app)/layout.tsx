@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { requireUser } from "@/lib/auth"
 import { AppShell } from "@/components/shell/app-shell"
 import { latestActivity } from "@/features/activity/queries"
+import { ThemeSync } from "@/features/settings/components/theme-sync"
 
 /** Every signed-in page: auth check, then the shell (top bar, rail, tab bar). */
 export default async function AppLayout({ children }: LayoutProps<"/">) {
@@ -24,6 +25,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       notifications={items}
       unread={unread}
     >
+      <ThemeSync preference={user.themePreference} />
       {children}
     </AppShell>
   )

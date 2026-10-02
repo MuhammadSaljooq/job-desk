@@ -145,6 +145,7 @@ model User {
   title              String? // display label, e.g. "Technician" (D14)
   avatarColor        String    @default("#4F7FBF")
   themePreference    String    @default("system") // system | light | dark
+  removedAt          DateTime? // removed from the team: can't sign in, history stays (phase 10)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
@@ -205,16 +206,21 @@ model VerificationToken {
 }
 
 model StorageConnection {
-  id                    String          @id @default(cuid())
-  businessId            String          @unique // one per business
-  provider              StorageProvider
-  accountEmail          String
-  encryptedRefreshToken String // AES-256-GCM, see src/lib/crypto.ts
-  rootFolderId          String? // JobDesk folder id (Drive) or path (Dropbox)
-  status                StorageStatus   @default(ACTIVE)
-  connectedById         String
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt
+  id                            String           @id @default(cuid())
+  businessId                    String           @unique // one per business
+  provider                      StorageProvider
+  accountEmail                  String
+  encryptedRefreshToken         String // AES-256-GCM, see src/lib/crypto.ts
+  rootFolderId                  String? // JobDesk folder id (Drive) or path (Dropbox)
+  status                        StorageStatus    @default(ACTIVE)
+  connectedById                 String
+  // Switching provider (D17): the old connection is kept here until its photos are copied.
+  previousProvider              StorageProvider?
+  previousAccountEmail          String?
+  previousEncryptedRefreshToken String? // AES-256-GCM, like the current one
+  previousRootFolderId          String?
+  createdAt                     DateTime         @default(now())
+  updatedAt                     DateTime         @updatedAt
 
   business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   connectedBy User     @relation("StorageConnector", fields: [connectedById], references: [id])

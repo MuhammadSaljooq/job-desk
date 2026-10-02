@@ -19,11 +19,20 @@ async function ownJob(businessId: string, jobId: unknown) {
   return job
 }
 
-/** Validate assignees belong to the same business (never trust ids from the client). */
-async function checkAssignees(businessId: string, ids: string[]) {
+/**
+ * Validate assignees belong to the same business (never trust ids from the client). Removed
+ * members can stay on jobs they already worked on, but can't be newly assigned.
+ */
+async function checkAssignees(businessId: string, ids: string[], jobId?: string) {
   if (!ids.length) return []
   const unique = [...new Set(ids)]
-  const found = await db.user.count({ where: { businessId, id: { in: unique } } })
+  const found = await db.user.count({
+    where: {
+      businessId,
+      id: { in: unique },
+      OR: [{ removedAt: null }, ...(jobId ? [{ assignedJobs: { some: { id: jobId } } }] : [])],
+    },
+  })
   if (found !== unique.length) throw new ActionError("Pick team members from your business.")
   return unique
 }
@@ -95,7 +104,7 @@ export async function updateJobAction(jobId: string, input: JobInput) {
     if (data.customerId !== existing.customerId) {
       throw new ActionError("A job can't move to another customer.")
     }
-    const assignees = await checkAssignees(user.businessId, data.assigneeIds)
+    const assignees = await checkAssignees(user.businessId, data.assigneeIds, jobId)
     await db.$transaction(async (tx) => {
       await tx.job.update({
         where: { id: existing.id },

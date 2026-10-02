@@ -19,19 +19,15 @@ export async function verifyCredentials(input: unknown): Promise<{ id: string } 
   const { email, password } = parsed.data
   const user = await db.user.findUnique({
     where: { email },
-    select: { id: true, passwordHash: true },
+    select: { id: true, passwordHash: true, removedAt: true },
   })
   const ok = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH)
-  if (!user?.passwordHash || !ok) return null
+  // removed team members keep their history but can no longer sign in
+  if (!user?.passwordHash || !ok || user.removedAt) return null
   return { id: user.id }
 }
 
-export const PASSWORD_MIN = 8
-
-export const passwordSchema = z
-  .string()
-  .min(PASSWORD_MIN, `Use at least ${PASSWORD_MIN} characters`)
-  .max(200, "That password is too long")
+export { PASSWORD_MIN, passwordSchema } from "./credentials-schema"
 
 export async function hashPassword(password: string) {
   return bcrypt.hash(password, 10)

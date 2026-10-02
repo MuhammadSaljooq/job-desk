@@ -10,8 +10,9 @@ import { StorageRevokedError } from "./types"
 
 export * from "./types"
 
-// Tests swap the real providers for FakeStorage.
-let override: ((businessId: string) => StorageProvider | null) | null = null
+// Tests swap the real providers for FakeStorage (`kind` is set when a specific provider is
+// asked for, e.g. a photo still on the previous provider while switching).
+let override: ((businessId: string, kind?: ProviderKind) => StorageProvider | null) | null = null
 export function setStorageOverride(fn: typeof override) {
   override = fn
 }
@@ -59,27 +60,57 @@ export async function storageStatus(businessId: string): Promise<StorageStatus> 
 export async function getStorage(businessId: string): Promise<StorageProvider | null> {
   if (override) return override(businessId)
   const conn = await db.storageConnection.findUnique({ where: { businessId } })
-  if (conn?.status === "ACTIVE") {
-    const tokens = new AccessTokens(
-      conn.provider === "GOOGLE_DRIVE" ? "google" : "dropbox",
-      decrypt(conn.encryptedRefreshToken)
-    )
-    if (conn.provider === "GOOGLE_DRIVE") return new GoogleDriveStorage(tokens)
-    if (conn.provider === "DROPBOX") return new DropboxStorage(tokens)
-  }
+  if (
+    conn?.status === "ACTIVE" &&
+    (conn.provider === "GOOGLE_DRIVE" || conn.provider === "DROPBOX")
+  )
+    return providerFor(conn.provider, conn.encryptedRefreshToken)
   if (!conn && devLocalEnabled()) return new DevLocalStorage(businessId)
   return null
 }
 
-/** The provider a stored photo lives in (it may differ from the current connection). */
+function providerFor(kind: "GOOGLE_DRIVE" | "DROPBOX", encryptedRefreshToken: string) {
+  const tokens = new AccessTokens(
+    kind === "GOOGLE_DRIVE" ? "google" : "dropbox",
+    decrypt(encryptedRefreshToken)
+  )
+  return kind === "GOOGLE_DRIVE" ? new GoogleDriveStorage(tokens) : new DropboxStorage(tokens)
+}
+
+/**
+ * The provider a stored photo lives in. It may differ from the current connection: while
+ * switching provider (D17) the old one is kept as `previous*` until its photos are copied.
+ */
 export async function getStorageFor(
   businessId: string,
   kind: ProviderKind
 ): Promise<StorageProvider | null> {
-  if (override) return override(businessId)
+  if (override) return override(businessId, kind)
   if (kind === "DEV_LOCAL") return devLocalEnabled() ? new DevLocalStorage(businessId) : null
   const s = await getStorage(businessId)
-  return s?.kind === kind ? s : null
+  if (s?.kind === kind) return s
+  const conn = await db.storageConnection.findUnique({
+    where: { businessId },
+    select: { previousProvider: true, previousEncryptedRefreshToken: true },
+  })
+  if (
+    conn?.previousProvider === kind &&
+    conn.previousEncryptedRefreshToken &&
+    (kind === "GOOGLE_DRIVE" || kind === "DROPBOX")
+  )
+    return providerFor(kind, conn.previousEncryptedRefreshToken)
+  return null
+}
+
+/** "Open folder" link for the connected JobDesk folder. */
+export function folderLink(provider: ProviderKind, rootFolderId: string | null): string | null {
+  if (provider === "GOOGLE_DRIVE")
+    return rootFolderId
+      ? `https://drive.google.com/drive/folders/${encodeURIComponent(rootFolderId)}`
+      : "https://drive.google.com/drive/my-drive"
+  if (provider === "DROPBOX")
+    return `https://www.dropbox.com/home${(rootFolderId ?? "/JobDesk").split("/").map(encodeURIComponent).join("/")}`
+  return null
 }
 
 /** Run a storage call; a revoked token marks the connection so the UI shows "Reconnect". */

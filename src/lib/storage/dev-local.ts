@@ -110,4 +110,20 @@ export class DevLocalStorage implements StorageProvider {
   async delete(fileId: string) {
     await rm(safeLocalPath(this.businessId, fileId), { force: true })
   }
+
+  async download(fileId: string) {
+    const res = await this.getFile(fileId)
+    if (res.type !== "stream" || !(res.body instanceof Uint8Array))
+      throw new StorageError("Not found", 404)
+    return { bytes: res.body, contentType: res.contentType }
+  }
+
+  async put(relative: string, bytes: Uint8Array): Promise<StoredFile> {
+    const full = safeLocalPath(this.businessId, relative)
+    await mkdir(path.dirname(full), { recursive: true })
+    await writeFile(full, bytes, { flag: "wx" }).catch(async (err: NodeJS.ErrnoException) => {
+      if (err.code !== "EEXIST") throw err
+    })
+    return { fileId: relative, path: relative }
+  }
 }

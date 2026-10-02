@@ -15,6 +15,7 @@ export type CurrentUser = {
   avatarColor: string
   title: string | null
   mustChangePassword: boolean
+  themePreference: string
   timezone: string
   currency: string
 }
@@ -47,10 +48,12 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
       avatarColor: true,
       title: true,
       mustChangePassword: true,
+      removedAt: true,
+      themePreference: true,
       business: { select: { timezone: true, currency: true } },
     },
   })
-  if (!user) return null
+  if (!user || user.removedAt) return null
   return {
     userId: user.id,
     businessId: user.businessId,
@@ -60,6 +63,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     avatarColor: user.avatarColor,
     title: user.title,
     mustChangePassword: user.mustChangePassword,
+    themePreference: user.themePreference,
     timezone: user.business.timezone,
     currency: user.business.currency,
   }

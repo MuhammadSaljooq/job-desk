@@ -61,6 +61,12 @@ export async function createTransactionAction(input: TransactionInput) {
         },
       })
       if (data.type === "INCOME" && customerId) {
+        const notify = (
+          await tx.business.findUniqueOrThrow({
+            where: { id: user.businessId },
+            select: { notifyPayments: true },
+          })
+        ).notifyPayments
         let detail = `${formatMoney(data.amountCents, user.currency)} ${CATEGORY_LABEL[data.category].toLowerCase()}`
         if (data.quoteId) {
           const [row] = await quoteTotalsFor(user.businessId, { quoteIds: [data.quoteId] })
@@ -80,7 +86,8 @@ export async function createTransactionAction(input: TransactionInput) {
             actorId: user.userId,
             entity: "transaction",
             entityId: t.id,
-            readAt: new Date(),
+            // D4 "Payment alerts": unread (shows in the bell) when the owner turned them on
+            readAt: notify ? null : new Date(),
           },
         })
       }

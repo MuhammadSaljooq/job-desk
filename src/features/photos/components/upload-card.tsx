@@ -58,7 +58,7 @@ async function dimensions(file: File): Promise<{ width: number | null; height: n
 }
 
 /** PUT/POST the bytes straight to the provider with progress; resolves with its JSON reply. */
-function sendFile(
+export function sendFile(
   target: { url: string; method: string; headers: Record<string, string> },
   file: File,
   onProgress: (p: number) => void

@@ -31,7 +31,7 @@ export function StageBadge({ stage }: { stage: PhotoStage }) {
     <span
       className={cn(
         "absolute top-2.5 left-2.5 rounded-full px-2.5 py-1 text-[11px] font-semibold",
-        stage === "AFTER" ? "bg-surface text-text" : "bg-ink/80 text-white"
+        stage === "AFTER" ? "bg-surface text-text" : "bg-black/65 text-white"
       )}
     >
       {PHOTO_STAGE_LABEL[stage]}

@@ -86,7 +86,6 @@
   --ink: #f2f5f2;
   --ink-foreground: #111413;
   --ink-soft: #3a4144;
-  --rail-active: #2f3533;
   --text: #f2f5f2;
   --text-muted: #9aa39c;
   --text-subtle: #6f7771;
@@ -115,6 +114,11 @@
   --rail-foreground: #c9cfcb;
   --toast: #17191a;
   --toast-foreground: #ffffff;
+}
+/* Dark mode (phase 10 review): lift the rail a step so it stands off the #111413 canvas. */
+[data-theme="dark"] {
+  --rail: #232927;
+  --rail-active: #3a4144;
 }
 
 @theme inline {
