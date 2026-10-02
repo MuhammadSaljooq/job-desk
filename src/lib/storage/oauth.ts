@@ -7,8 +7,14 @@ import { StorageError, StorageRevokedError } from "./types"
 
 export type OAuthProvider = "google" | "dropbox"
 
+/**
+ * The public URL of the app (OAuth redirects). APP_URL wins; on Vercel it falls back to the
+ * project's production domain so OAuth never points at localhost by accident.
+ */
 export function appUrl(): string {
-  return (process.env.APP_URL ?? "http://localhost:3210").replace(/\/+$/, "")
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL
+  const url = process.env.APP_URL || (vercel ? `https://${vercel}` : "http://localhost:3210")
+  return url.replace(/\/+$/, "")
 }
 
 export function redirectUri(provider: OAuthProvider) {

@@ -545,14 +545,42 @@ previousEncryptedRefreshToken / previousRootFolderId` keep the old connection wh
   Prisma client, so sign-in there hangs after this migration.
 - Checks: lint ✓, typecheck ✓, tests ✓, E2E ✓, build ✓.
 
+## Phase 11, part 1: Vercel readiness (2026-10-03)
+
+- Hosting decided (D21): **Vercel + Neon**, project `test11-123f/job-desk-dylan`.
+- Audit findings, fixed:
+  - **Migrations never ran on deploy.** `vercel-build` now runs
+    `prisma migrate deploy && next build`, and `prisma.config.ts` uses
+    `DATABASE_URL_UNPOOLED` (direct) for migrations when it's set.
+  - **There was no way to create the first account in production** (the demo seed refuses
+    there). `pnpm setup:prod --business --name --email [--timezone]`
+    (`src/features/settings/bootstrap.ts`) creates the business, the owner (a one-time
+    temporary password, must be changed) and the 44-item catalog only, and refuses if a
+    business exists.
+  - **OAuth redirects could point at localhost** if `APP_URL` was missing. `appUrl()` now
+    falls back to `VERCEL_PROJECT_PRODUCTION_URL`.
+  - Pinned region `iad1` (`vercel.json`) and Node `>=22` (`engines`). The DB pool is capped
+    at 5 per instance in production (`DB_POOL_MAX`).
+  - The Dropbox permissions list here was incomplete: the code also needs
+    `files.metadata.read` and `account_info.read`.
+- `docs/DEPLOY.md`: connect Git, Neon via the Marketplace (with preview branching so
+  previews don't migrate production), env vars, first deploy, `setup:prod`, Google and
+  Dropbox production setup, custom domain, rollbacks, troubleshooting.
+- Pushed phases 7–10 and the perf work to GitHub `main`. The Vercel project wasn't
+  connected to the repo yet (no deployments), so nothing has deployed.
+- Rehearsed on an empty local database in production mode: migrate deploy → setup:prod →
+  second run refused → demo seed refused → production build → sign in with the temp
+  password → sent to "Choose your password"; `/dev/components` 404.
+- Tests: bootstrap (owner, catalog only, refuses twice and bad input, password shape) and
+  the `appUrl` fallback.
+
 ## External setup still needed (by you)
 
-- Google Cloud OAuth client: Drive API, scope `drive.file`, redirect
-  `http://localhost:3210/api/storage/callback/google`.
-- Dropbox scoped app: `files.content.read` and `files.content.write`, redirect
-  `http://localhost:3210/api/storage/callback/dropbox`.
+Follow `docs/DEPLOY.md`: connect the Vercel project to the GitHub repo, add Neon, set the env
+vars, run `pnpm setup:prod` once, then the Google Cloud OAuth client and Dropbox app with the
+production redirect URLs (all four Dropbox permissions).
 
 ## Next
 
-Phase 11: polish, tests and deploy (`docs/prompts/11-polish-tests-deploy.md`). Hosting (D21)
-must be decided first: Vercel + Neon or AWS.
+Phase 11, part 2: mobile polish at 375 / 768, loading and error states, the PWA manifest, the
+full-journey E2E test and GitHub Actions CI.

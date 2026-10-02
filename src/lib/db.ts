@@ -10,7 +10,10 @@ const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient }
 function createClient() {
   const connectionString = process.env.DATABASE_URL
   if (!connectionString) throw new Error("DATABASE_URL is not set")
-  const adapter = new PrismaPg({ connectionString })
+  // Serverless (Vercel) runs many small instances: keep each one's pool small so they don't
+  // exhaust the database's connections. DATABASE_URL should be the pooled URL in production.
+  const max = Number(process.env.DB_POOL_MAX) || (process.env.NODE_ENV === "production" ? 5 : 10)
+  const adapter = new PrismaPg({ connectionString, max })
   return new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
