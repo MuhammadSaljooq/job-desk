@@ -1,0 +1,12 @@
+# Never upload local secrets, dev-only photo storage or local build output with `vercel deploy`.
+.env
+.env.*
+!.env.example
+.storage
+.next
+.next-e2e
+.next-prod
+node_modules
+test-results
+playwright-report
+coverage

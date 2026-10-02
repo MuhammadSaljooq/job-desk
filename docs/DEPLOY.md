@@ -28,8 +28,8 @@ What the repo already does for you:
    GitHub account than the Vercel team, so allow the Vercel GitHub app to access it if asked.
 3. Production branch: `main`.
 4. Leave Framework (Next.js), Install Command and Build Command on their defaults. Vercel
-   finds `vercel-build` by itself. Node.js version: **22.x** or newer (`engines` in
-   package.json).
+   finds `vercel-build` by itself. Node.js version: **24.x**. `engines` in package.json is
+   `>=22 <25`, so a new major Node version is never picked up by surprise.
 
 ## 2. Add the database (Neon)
 
