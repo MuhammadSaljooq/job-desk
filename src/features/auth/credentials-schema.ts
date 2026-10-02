@@ -1,7 +1,9 @@
 import { z } from "zod"
 
-// Shared by the server (credentials.ts) and client forms (team member dialog).
-export const PASSWORD_MIN = 8
+import { PASSWORD_MIN } from "./password-rules"
+
+// Shared by the server (credentials.ts) and the team actions.
+export { PASSWORD_MIN }
 
 export const passwordSchema = z
   .string()

@@ -1,13 +1,9 @@
 import { z } from "zod"
 import { ALLOWED_PHOTO_TYPES, MAX_PHOTO_BYTES } from "@/lib/storage/types"
 
-export const PHOTO_STAGES = ["BEFORE", "DURING", "AFTER"] as const
-export type PhotoStage = (typeof PHOTO_STAGES)[number]
-export const PHOTO_STAGE_LABEL: Record<PhotoStage, string> = {
-  BEFORE: "Before",
-  DURING: "During",
-  AFTER: "After",
-}
+import { PHOTO_STAGES } from "./constants"
+
+export { PHOTO_STAGES, PHOTO_STAGE_LABEL, type PhotoStage } from "./constants"
 
 export const uploadRequestSchema = z.object({
   customerId: z.string().min(1),

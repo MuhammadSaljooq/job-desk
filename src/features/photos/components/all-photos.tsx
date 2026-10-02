@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { EmptyState } from "@/components/shared/empty-state"
-import { PHOTO_STAGES, PHOTO_STAGE_LABEL } from "../schema"
+import { PHOTO_STAGES, PHOTO_STAGE_LABEL } from "../constants"
 import { PhotoTileButton, type GalleryPhoto } from "./gallery"
 import { PhotoViewer } from "./photo-viewer"
 

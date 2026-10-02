@@ -43,14 +43,7 @@ export const customerSchema = z.object({
 export type CustomerInput = z.input<typeof customerSchema>
 export type CustomerData = z.output<typeof customerSchema>
 
-export const CUSTOMER_FILTERS = ["all", "active", "none", "owes"] as const
-export type CustomerFilter = (typeof CUSTOMER_FILTERS)[number]
-export const CUSTOMER_FILTER_LABEL: Record<CustomerFilter, string> = {
-  all: "All customers",
-  active: "Active jobs",
-  none: "No jobs",
-  owes: "Owes money",
-}
+export { CUSTOMER_FILTERS, CUSTOMER_FILTER_LABEL, type CustomerFilter } from "./constants"
 
 export const noteSchema = z.object({
   body: z.string().trim().min(1, "Write a note first").max(2000, "Keep it under 2000 characters"),

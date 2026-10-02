@@ -27,7 +27,13 @@ import {
   renameCategoryAction,
 } from "../actions"
 import { ImportCard } from "./import-card"
-import { ItemDialog, type ItemFormValues } from "./item-dialog"
+import dynamic from "next/dynamic"
+import { useLazyDialog } from "@/lib/use-lazy-dialog"
+import type { ItemFormValues } from "./item-dialog"
+
+// Loaded on first open (form code + zod stay off the page's first load).
+const loadItemDialog = () => import("./item-dialog")
+const ItemDialog = dynamic(() => loadItemDialog().then((m) => m.ItemDialog))
 
 /** The catalog page (shot-catalog.png): import card, categories, items table. */
 export function CatalogView({
@@ -50,6 +56,7 @@ export function CatalogView({
   const [pending, start] = useTransition()
   const [importOpen, setImportOpen] = useState(params.get("import") === "1")
   const [itemOpen, setItemOpen] = useState(false)
+  const showItem = useLazyDialog(itemOpen, loadItemDialog)
   const [editing, setEditing] = useState<(ItemFormValues & { id: string }) | null>(null)
   const [deleting, setDeleting] = useState<CatalogItemRow | null>(null)
   const [deletingCat, setDeletingCat] = useState<CatalogCategoryRow | null>(null)
@@ -322,13 +329,15 @@ export function CatalogView({
         </div>
       )}
 
-      <ItemDialog
-        open={itemOpen}
-        onOpenChange={setItemOpen}
-        itemId={editing?.id}
-        initial={editing ?? (activeName ? { category: activeName } : undefined)}
-        categories={categories.map((c) => c.name)}
-      />
+      {showItem && (
+        <ItemDialog
+          open={itemOpen}
+          onOpenChange={setItemOpen}
+          itemId={editing?.id}
+          initial={editing ?? (activeName ? { category: activeName } : undefined)}
+          categories={categories.map((c) => c.name)}
+        />
+      )}
       <ConfirmDialog
         open={!!deleting}
         onOpenChange={(o) => !o && setDeleting(null)}

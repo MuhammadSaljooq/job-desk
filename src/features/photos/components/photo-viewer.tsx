@@ -18,7 +18,7 @@ import {
 import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { FormField } from "@/components/shared/form-field"
 import { deletePhotoAction, updatePhotoAction } from "../actions"
-import { PHOTO_STAGES, PHOTO_STAGE_LABEL, type PhotoStage } from "../schema"
+import { PHOTO_STAGES, PHOTO_STAGE_LABEL, type PhotoStage } from "../constants"
 import type { GalleryPhoto } from "./gallery"
 
 /** Large image, edit caption / stage / job, delete, open in Drive / Dropbox, ← → keys. */

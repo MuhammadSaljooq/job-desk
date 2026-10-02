@@ -1,22 +1,20 @@
 "use client"
 
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import dynamic from "next/dynamic"
 import { format, parseISO } from "date-fns"
-import { cn } from "cn"
 import { formatMoney } from "@/lib/money"
 import type { MonthMoney } from "../queries"
 
-const monthShort = (m: string) => format(parseISO(`${m}-01`), "MMM")
+export { axisMoney } from "../chart-format"
 
-/** Compact axis labels from cents: 60000 -> "$600", 150000 -> "$1.5k". */
-export function axisMoney(cents: number): string {
-  const dollars = cents / 100
-  return dollars >= 1000 ? `$${Number((dollars / 1000).toFixed(1))}k` : `$${Math.round(dollars)}`
-}
+// Recharts (~100 KB) loads after the page so the dashboard is usable sooner.
+const MoneyBars = dynamic(() => import("./money-bars"), {
+  ssr: false,
+  loading: () => <div className="h-full animate-pulse rounded-field bg-surface-muted" />,
+})
 
 /** Row 3: revenue vs expenses bars for the last 6 months (sums come from SQL). */
 export function MoneyChart({ data, currency }: { data: MonthMoney[]; currency: string }) {
-  const rows = data.map((d) => ({ ...d, label: monthShort(d.month) }))
   const empty = data.every((d) => d.income === 0 && d.expenses === 0)
   const money = (c: number) => formatMoney(c, currency)
   return (
@@ -40,44 +38,11 @@ export function MoneyChart({ data, currency }: { data: MonthMoney[]; currency: s
         </p>
       ) : (
         <div className="h-[260px]" aria-hidden>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={rows} barGap={3} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
-              <CartesianGrid vertical={false} stroke="var(--divider)" />
-              <XAxis
-                dataKey="label"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: "var(--text-muted)", fontSize: 12 }}
-              />
-              <YAxis
-                width={52}
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: "var(--text-muted)", fontSize: 11 }}
-                tickFormatter={axisMoney}
-              />
-              <Tooltip
-                cursor={{ fill: "var(--surface-muted)" }}
-                formatter={(v, name) => [
-                  money(Number(v)),
-                  name === "income" ? "Revenue" : "Expenses",
-                ]}
-                contentStyle={{
-                  background: "var(--surface)",
-                  border: "none",
-                  borderRadius: 12,
-                  boxShadow: "0 8px 24px rgb(0 0 0 / .12)",
-                  fontSize: 13,
-                }}
-              />
-              <Bar dataKey="income" fill="var(--mint-ink)" radius={[6, 6, 0, 0]} maxBarSize={18} />
-              <Bar dataKey="expenses" fill="var(--danger)" radius={[6, 6, 0, 0]} maxBarSize={18} />
-            </BarChart>
-          </ResponsiveContainer>
+          <MoneyBars data={data} currency={currency} />
         </div>
       )}
       {/* the same numbers for screen readers and tests */}
-      <table className={cn("sr-only")}>
+      <table className="sr-only">
         <caption>Money in and out, last 6 months</caption>
         <thead>
           <tr>

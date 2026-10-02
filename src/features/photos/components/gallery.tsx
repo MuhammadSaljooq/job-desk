@@ -6,7 +6,7 @@ import { cn } from "cn"
 import { StagePill } from "@/components/shared/status-pill"
 import { EmptyState } from "@/components/shared/empty-state"
 import type { JobStage } from "@/lib/status"
-import { PHOTO_STAGES, PHOTO_STAGE_LABEL, type PhotoStage } from "../schema"
+import { PHOTO_STAGES, PHOTO_STAGE_LABEL, type PhotoStage } from "../constants"
 import { PhotoViewer } from "./photo-viewer"
 
 export type GalleryPhoto = {

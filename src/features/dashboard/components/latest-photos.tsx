@@ -3,7 +3,7 @@ import { Camera } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/shared/empty-state"
 import { StageBadge } from "@/features/photos/components/gallery"
-import { PHOTO_STAGE_LABEL } from "@/features/photos/schema"
+import { PHOTO_STAGE_LABEL } from "@/features/photos/constants"
 import type { PhotoTile } from "@/features/photos/queries"
 
 /** Row 3: the 6 newest job site photos with their Before / During / After badge. */

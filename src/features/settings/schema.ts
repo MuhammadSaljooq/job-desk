@@ -1,28 +1,8 @@
 import { z } from "zod"
 import { passwordSchema } from "@/features/auth/credentials-schema"
+import { AVATAR_COLORS, CURRENCIES } from "./constants"
 
-export const CURRENCIES = [
-  { code: "USD", label: "$ US Dollar" },
-  { code: "CAD", label: "$ Canadian Dollar" },
-  { code: "AUD", label: "$ Australian Dollar" },
-  { code: "GBP", label: "£ British Pound" },
-  { code: "EUR", label: "€ Euro" },
-] as const
-
-// The common North American zones first; any IANA zone the runtime knows is accepted.
-export const COMMON_TIMEZONES = [
-  "America/New_York",
-  "America/Chicago",
-  "America/Denver",
-  "America/Phoenix",
-  "America/Los_Angeles",
-  "America/Anchorage",
-  "Pacific/Honolulu",
-  "America/Toronto",
-  "America/Vancouver",
-  "Europe/London",
-  "Australia/Sydney",
-] as const
+export { AVATAR_COLORS, COMMON_TIMEZONES, CURRENCIES } from "./constants"
 
 export function isTimezone(tz: string) {
   try {
@@ -71,17 +51,6 @@ export const settingsSchema = z.object({
   notifyPayments: z.boolean(),
 })
 export type SettingsInput = z.input<typeof settingsSchema>
-
-export const AVATAR_COLORS = [
-  "#C9825B",
-  "#4F7FBF",
-  "#5B8F6A",
-  "#B05D8E",
-  "#7A6BC2",
-  "#3F8F93",
-  "#D09A36",
-  "#2D3436",
-] as const
 
 const memberFields = {
   name: z.string().trim().min(1, "Add a name").max(60, "Keep it under 60 characters"),

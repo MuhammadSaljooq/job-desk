@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/select"
 import { Breadcrumb } from "@/components/shell/breadcrumb"
 import { formatBps, percentToBps } from "@/lib/money"
-import { CURRENCIES, COMMON_TIMEZONES } from "../schema"
+import { CURRENCIES, COMMON_TIMEZONES } from "../constants"
 import { saveSettingsAction, setThemeAction } from "../actions"
 import type { SettingsView } from "../queries"
 import { FieldRow, RowIcon, SettingsCard } from "./field-row"

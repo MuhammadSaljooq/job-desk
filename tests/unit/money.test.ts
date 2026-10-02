@@ -9,7 +9,7 @@ import {
   sum,
   toCents,
 } from "@/lib/money"
-import { axisMoney } from "@/features/dashboard/components/money-chart"
+import { axisMoney } from "@/features/dashboard/chart-format"
 
 describe("toCents", () => {
   it("parses typed amounts without float error", () => {

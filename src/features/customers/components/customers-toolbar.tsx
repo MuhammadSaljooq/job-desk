@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { FilterPill } from "@/components/shell/breadcrumb"
-import { CUSTOMER_FILTERS, CUSTOMER_FILTER_LABEL, type CustomerFilter } from "../schema"
+import { CUSTOMER_FILTERS, CUSTOMER_FILTER_LABEL, type CustomerFilter } from "../constants"
 
 const FILTER_DOT: Record<CustomerFilter, string> = {
   all: "bg-text-subtle",

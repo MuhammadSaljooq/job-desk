@@ -61,10 +61,7 @@ export const createQuoteSchema = z.object({
 export const QUOTE_FILTERS = ["ALL", ...QUOTE_STATUSES] as const
 export type QuoteFilter = (typeof QUOTE_FILTERS)[number]
 
-/** Editing lines is allowed while the quote is a draft or has been sent. */
-export function isEditable(status: string) {
-  return status === "DRAFT" || status === "SENT"
-}
+export { isEditable } from "./status"
 
 export function quoteNumberLabel(n: number) {
   return `Q-${n}`

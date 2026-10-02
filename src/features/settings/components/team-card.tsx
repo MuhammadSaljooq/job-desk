@@ -25,8 +25,8 @@ import { ConfirmDialog } from "@/components/shared/confirm-dialog"
 import { FormField } from "@/components/shared/form-field"
 import { InitialsAvatar } from "@/components/shared/initials-avatar"
 import { StatusPill } from "@/components/shared/status-pill"
-import { PASSWORD_MIN } from "@/features/auth/credentials-schema"
-import { AVATAR_COLORS } from "../schema"
+import { PASSWORD_MIN } from "@/features/auth/password-rules"
+import { AVATAR_COLORS } from "../constants"
 import {
   addMemberAction,
   removeMemberAction,

@@ -6,12 +6,16 @@ import { Pencil, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { RoundButton } from "@/components/shared/round-button"
 import { RowAction } from "@/components/shared/detail-row"
-import { CustomerDialog, type CustomerFormValues } from "./customer-dialog"
-import {
-  JobDialog,
-  type JobFormValues,
-  type TeamOption,
-} from "@/features/jobs/components/job-dialog"
+import type { CustomerFormValues } from "./customer-dialog"
+import type { JobFormValues, TeamOption } from "@/features/jobs/components/job-dialog"
+import dynamic from "next/dynamic"
+import { useLazyDialog } from "@/lib/use-lazy-dialog"
+
+// Loaded on first open (form code + zod stay off the page's first load).
+const loadCustomerDialog = () => import("./customer-dialog")
+const loadJobDialog = () => import("@/features/jobs/components/job-dialog")
+const CustomerDialog = dynamic(() => loadCustomerDialog().then((m) => m.CustomerDialog))
+const JobDialog = dynamic(() => loadJobDialog().then((m) => m.JobDialog))
 
 type EditableJob = { id: string } & Partial<JobFormValues>
 
@@ -81,27 +85,33 @@ export function ProfileDialogs({
     setJobState(true)
   }, [])
   const value = useMemo(() => ({ editCustomer, newJob, editJob }), [editCustomer, newJob, editJob])
+  const showEdit = useLazyDialog(editOpen, loadCustomerDialog)
+  const showJob = useLazyDialog(jobOpen, loadJobDialog)
 
   return (
     <ProfileDialogsContext.Provider value={value}>
       {children}
-      <CustomerDialog
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        customerId={customerId}
-        initial={customer}
-      />
-      <JobDialog
-        open={jobOpen}
-        onOpenChange={setJobOpen}
-        jobId={job?.id}
-        initial={
-          job
-            ? { ...job, customerId }
-            : { customerId, date: jobDate ?? "", stage: jobDate ? "SCHEDULED" : "LEAD" }
-        }
-        team={team}
-      />
+      {showEdit && (
+        <CustomerDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          customerId={customerId}
+          initial={customer}
+        />
+      )}
+      {showJob && (
+        <JobDialog
+          open={jobOpen}
+          onOpenChange={setJobOpen}
+          jobId={job?.id}
+          initial={
+            job
+              ? { ...job, customerId }
+              : { customerId, date: jobDate ?? "", stage: jobDate ? "SCHEDULED" : "LEAD" }
+          }
+          team={team}
+        />
+      )}
     </ProfileDialogsContext.Provider>
   )
 }

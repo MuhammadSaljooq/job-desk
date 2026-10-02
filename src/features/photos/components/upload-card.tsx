@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { savePhotosAction } from "../actions"
-import { PHOTO_STAGES, PHOTO_STAGE_LABEL, type PhotoStage } from "../schema"
+import { PHOTO_STAGES, PHOTO_STAGE_LABEL, type PhotoStage } from "../constants"
 
 export type StorageState = "connected" | "dev-local" | "none" | "revoked"
 
